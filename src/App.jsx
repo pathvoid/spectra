@@ -1,6 +1,11 @@
 import { Routes, Route, Link } from 'react-router-dom';
+import { useState } from 'react';
 
 function Home() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+
   const mediaItems = [
     { id: 1, title: 'The Great Adventure', type: 'movie', year: 2023, duration: '2h 15m' },
     { id: 2, title: 'Mystery of the Night', type: 'movie', year: 2022, duration: '1h 45m' },
@@ -12,31 +17,127 @@ function Home() {
     { id: 8, title: 'Educational Series', type: 'series', episodes: 8, duration: '30m each' }
   ];
 
+  const handleSearch = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    
+    // Mock YouTube search results - replace with actual API call
+    const mockResults = [
+      {
+        id: 'yt1',
+        title: `${query} - Official Video`,
+        channel: 'Popular Channel',
+        duration: '3:45',
+        views: '1.2M views',
+        thumbnail: 'https://placehold.co/100x100',
+        url: 'https://youtube.com/watch?v=mock1'
+      },
+      {
+        id: 'yt2',
+        title: `${query} - Live Performance`,
+        channel: 'Music Channel',
+        duration: '5:20',
+        views: '856K views',
+        thumbnail: 'https://placehold.co/100x100',
+        url: 'https://youtube.com/watch?v=mock2'
+      },
+      {
+        id: 'yt3',
+        title: `${query} - Tutorial`,
+        channel: 'Tutorial Channel',
+        duration: '12:30',
+        views: '450K views',
+        thumbnail: 'https://placehold.co/100x100',
+        url: 'https://youtube.com/watch?v=mock3'
+      }
+    ];
+
+    // Simulate API delay
+    setTimeout(() => {
+      setSearchResults(mockResults);
+      setIsSearching(false);
+    }, 1000);
+  };
+
   return (
     <div className="w-full p-6">
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative max-w-md mx-auto">
-          <input
-            type="text"
-            placeholder="Search a media..."
-            className="input input-bordered w-full pl-10 pr-4"
-          />
-          <svg
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/50"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      {/* Header with Branding and Search */}
+      <div className="mb-6 flex items-center justify-between">
+        {/* Branding */}
+        <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.location.href = '/'}>
+          <div>
+            <h1 className="text-2xl font-bold text-primary">Spectra</h1>
+            <p className="text-sm text-base-content/70">Media Center</p>
+          </div>
+        </div>
+
+        {/* Search Bar - Centered */}
+        <div className="absolute left-1/2 transform -translate-x-1/2">
+          <div className="relative w-96">
+            <input
+              type="text"
+              placeholder="Search videos..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+              className="input input-bordered w-full pl-10 pr-4"
             />
-          </svg>
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/50"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <span className="loading loading-spinner loading-sm"></span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Search Results */}
+      {searchResults.length > 0 && (
+        <div className="mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {searchResults.map((result) => (
+              <div key={result.id} className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                <figure className="px-4 pt-4">
+                  <img
+                    src={result.thumbnail}
+                    alt={result.title}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                </figure>
+                <div className="card-body p-4">
+                  <h3 className="card-title text-sm line-clamp-2">{result.title}</h3>
+                  <p className="text-xs text-base-content/70">{result.channel}</p>
+                  <div className="flex justify-between items-center text-xs text-base-content/60">
+                    <span>{result.duration}</span>
+                    <span>{result.views}</span>
+                  </div>
+                  <div className="card-actions justify-end mt-3">
+                    <button className="btn btn-primary btn-xs">Add to Library</button>
+                    <button className="btn btn-ghost btn-xs">Preview</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Add New Media Tile */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
@@ -56,12 +157,11 @@ function Home() {
         {mediaItems.map((item) => (
           <div key={item.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer">
             <figure className="px-6 pt-6">
-              <div className="w-full h-64 bg-gradient-to-br from-base-300 to-base-200 rounded-lg flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10"></div>
-                <div className="relative z-10 text-center">
-                  <div className="text-sm text-base-content/60 uppercase tracking-wide font-medium">{item.type}</div>
-                </div>
-              </div>
+              <img
+                src="https://placehold.co/100x100"
+                alt={item.title}
+                className="w-full h-64 object-cover rounded-lg"
+              />
             </figure>
             <div className="card-body">
               <h3 className="card-title text-base">{item.title}</h3>
