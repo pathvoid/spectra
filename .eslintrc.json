@@ -21,6 +21,7 @@
     "@typescript-eslint/semi": ["error", "always"],
     "@typescript-eslint/indent": ["error", 2],
     "@typescript-eslint/quotes": ["error", "single"],
-    "import/no-unresolved": "off"
+    "import/no-unresolved": "off",
+    "import/no-named-as-default-member": "off"
   }
 }
