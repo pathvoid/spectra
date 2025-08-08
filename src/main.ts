@@ -96,7 +96,7 @@ const createWindow = () => {
     const videoTitle = videoInfo.videoDetails.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
      
     // Create downloads directory if it doesn't exist
-    const downloadsDir = path.join(__dirname, '../downloads');
+    const downloadsDir = path.join(app.getPath('userData'), 'downloads');
     if (!fs.existsSync(downloadsDir)) {
       fs.mkdirSync(downloadsDir, { recursive: true });
     }
