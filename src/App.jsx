@@ -32,37 +32,8 @@ function Home() {
       setSearchResults(results);
     } catch (error) {
       console.error('Search error:', error);
-      // Fallback to mock results if search fails
-      const mockResults = [
-        {
-          id: 'yt1',
-          title: `${query} - Official Video`,
-          channel: 'Popular Channel',
-          duration: '3:45',
-          views: '1.2M views',
-          thumbnail: 'https://placehold.co/100x100',
-          url: 'https://youtube.com/watch?v=mock1'
-        },
-        {
-          id: 'yt2',
-          title: `${query} - Live Performance`,
-          channel: 'Music Channel',
-          duration: '5:20',
-          views: '856K views',
-          thumbnail: 'https://placehold.co/100x100',
-          url: 'https://youtube.com/watch?v=mock2'
-        },
-        {
-          id: 'yt3',
-          title: `${query} - Tutorial`,
-          channel: 'Tutorial Channel',
-          duration: '12:30',
-          views: '450K views',
-          thumbnail: 'https://placehold.co/100x100',
-          url: 'https://youtube.com/watch?v=mock3'
-        }
-      ];
-      setSearchResults(mockResults);
+      // Show empty results if search fails
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
