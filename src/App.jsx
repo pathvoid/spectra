@@ -1,9 +1,10 @@
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 function Home() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const location = useLocation();
+  const [searchQuery, setSearchQuery] = useState(location.state?.searchQuery || '');
+  const [searchResults, setSearchResults] = useState(location.state?.searchResults || []);
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
@@ -31,7 +32,6 @@ function Home() {
       const results = await window.electronAPI.youtubeSearch(query);
       setSearchResults(results);
     } catch (error) {
-      console.error('Search error:', error);
       // Show empty results if search fails
       setSearchResults([]);
     } finally {
@@ -89,7 +89,7 @@ function Home() {
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {searchResults.map((result) => (
-              <div key={result.id} className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer" onClick={() => navigate(`/play/${result.id}`, { state: { video: result } })}>
+              <div key={result.id} className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer" onClick={() => navigate(`/play/${result.id}`, { state: { video: result, searchQuery, searchResults } })}>
                 <figure className="px-4 pt-4">
                   <img
                     src={result.thumbnail}
@@ -106,7 +106,7 @@ function Home() {
                   </div>
                   <div className="card-actions justify-end mt-3">
                     <button className="btn btn-primary btn-xs">Add to Library</button>
-                    <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/play/${result.id}`, { state: { video: result } })}>Play</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/play/${result.id}`, { state: { video: result, searchQuery, searchResults } })}>Play</button>
                   </div>
                 </div>
               </div>
@@ -174,6 +174,70 @@ function VideoPlayer() {
   const navigate = useNavigate();
   const location = useLocation();
   const video = location.state?.video;
+  const searchQuery = location.state?.searchQuery;
+  const searchResults = location.state?.searchResults;
+  const [videoDetails, setVideoDetails] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadedVideo, setDownloadedVideo] = useState(null);
+  const [videoRef, setVideoRef] = useState(null);
+  const [videoDataUrl, setVideoDataUrl] = useState(null);
+  const downloadStartedRef = useRef(false);
+
+  useEffect(() => {
+    if (video?.videoId) {
+      fetchVideoDetails();
+    }
+  }, [video]);
+
+  const fetchVideoDetails = async () => {
+    if (!video?.videoId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const details = await window.electronAPI.fetchVideoDetails(video.videoId);
+      setVideoDetails(details);
+    } catch (err) {
+      setError('Failed to load video details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = useCallback(async () => {
+    if (!video?.videoId || downloadStartedRef.current) return;
+    
+    downloadStartedRef.current = true;
+    setIsDownloading(true);
+    setError(null);
+    
+    try {
+      const result = await window.electronAPI.downloadVideo(video.videoId);
+      setDownloadedVideo(result);
+      
+      // Get the video as a blob URL for secure playback
+      if (result.success) {
+        const blobResult = await window.electronAPI.getVideoBlob(result.filePath);
+        if (blobResult.success) {
+          setVideoDataUrl(blobResult.dataUrl);
+        }
+      }
+    } catch (err) {
+      setError('Failed to download video');
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [video?.videoId]);
+
+  // Auto-download when component mounts
+  useEffect(() => {
+    if (video?.videoId && !downloadedVideo && !isDownloading && !downloadStartedRef.current) {
+      handleDownload();
+    }
+  }, [video, downloadedVideo, isDownloading, handleDownload]);
 
   if (!video) {
     return (
@@ -189,23 +253,83 @@ function VideoPlayer() {
   return (
     <div className="w-full h-screen bg-black flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-black/80 text-white">
+      <div className="absolute top-0 left-0 z-50 p-4">
         <button 
-          className="btn btn-ghost text-white" 
-          onClick={() => navigate('/')}
+          className="btn btn-ghost text-white hover:bg-white/10" 
+          onClick={() => navigate('/', { state: { searchQuery, searchResults } })}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back
+           Back
         </button>
-        <h1 className="text-lg font-semibold truncate max-w-md">{video.title}</h1>
-        <div className="w-16"></div> {/* Spacer for centering */}
       </div>
 
-      {/* Video Player */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-full h-full flex items-center justify-center">
+      {/* Main Content */}
+      <div className="flex-1 flex items-center justify-center relative h-full">
+        {isLoading ? (
+          <div className="text-center text-white">
+            <div className="loading loading-spinner loading-lg mb-4"></div>
+            <p className="text-lg">Loading video details...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center text-white">
+            <div className="mb-4">
+              <svg className="w-24 h-24 mx-auto text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold mb-2">Error Loading Video</h2>
+            <p className="text-white/70 mb-4">{error}</p>
+            <button className="btn btn-primary" onClick={fetchVideoDetails}>Retry</button>
+          </div>
+        ) : videoDetails ? (
+          <div className="w-full h-full flex flex-col">
+            {/* Video Player - Full Screen */}
+            {downloadedVideo && videoDataUrl ? (
+              <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                <video
+                  ref={setVideoRef}
+                  controls
+                  className="max-w-full max-h-full object-contain"
+                  src={videoDataUrl}
+                  autoPlay
+                >
+                   Your browser does not support the video tag.
+                </video>
+              </div>
+            ) : (
+            /* Download Status - Centered */
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-white">
+                  {isDownloading ? (
+                    <div>
+                      <div className="loading loading-spinner loading-lg mb-4"></div>
+                      <h2 className="text-2xl font-bold mb-2">Downloading Video</h2>
+                      <p className="text-white/70">Please wait while we download the video...</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="mb-4">
+                        <svg className="w-24 h-24 mx-auto text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h2 className="text-2xl font-bold mb-2">{videoDetails.title}</h2>
+                      <p className="text-white/70 mb-4">by {videoDetails.author}</p>
+                      <div className="flex gap-4 text-sm text-white/60 mb-6 justify-center">
+                        <span>{Math.floor(videoDetails.lengthSeconds / 60)}:{(videoDetails.lengthSeconds % 60).toString().padStart(2, '0')}</span>
+                        <span>{videoDetails.viewCount?.toLocaleString()} views</span>
+                        <span>{new Date(videoDetails.published * 1000).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm text-white/50">Preparing video for playback...</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
           <div className="text-center text-white">
             <div className="mb-4">
               <svg className="w-24 h-24 mx-auto text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,13 +338,9 @@ function VideoPlayer() {
             </div>
             <h2 className="text-xl font-semibold mb-2">{video.title}</h2>
             <p className="text-white/70 mb-4">{video.channel}</p>
-            <p className="text-sm text-white/50 mb-6">Video player integration coming soon...</p>
-            <div className="flex gap-2 justify-center">
-              <button className="btn btn-primary">Play Video</button>
-              <button className="btn btn-outline text-white border-white hover:bg-white hover:text-black">Download</button>
-            </div>
+            <p className="text-sm text-white/50 mb-6">Loading video details...</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
