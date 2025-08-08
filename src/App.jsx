@@ -1,10 +1,11 @@
-import { Routes, Route, Link } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const navigate = useNavigate();
 
   const mediaItems = [
     { id: 1, title: 'The Great Adventure', type: 'movie', year: 2023, duration: '2h 15m' },
@@ -25,42 +26,46 @@ function Home() {
 
     setIsSearching(true);
     
-    // Mock YouTube search results - replace with actual API call
-    const mockResults = [
-      {
-        id: 'yt1',
-        title: `${query} - Official Video`,
-        channel: 'Popular Channel',
-        duration: '3:45',
-        views: '1.2M views',
-        thumbnail: 'https://placehold.co/100x100',
-        url: 'https://youtube.com/watch?v=mock1'
-      },
-      {
-        id: 'yt2',
-        title: `${query} - Live Performance`,
-        channel: 'Music Channel',
-        duration: '5:20',
-        views: '856K views',
-        thumbnail: 'https://placehold.co/100x100',
-        url: 'https://youtube.com/watch?v=mock2'
-      },
-      {
-        id: 'yt3',
-        title: `${query} - Tutorial`,
-        channel: 'Tutorial Channel',
-        duration: '12:30',
-        views: '450K views',
-        thumbnail: 'https://placehold.co/100x100',
-        url: 'https://youtube.com/watch?v=mock3'
-      }
-    ];
-
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      // Use IPC to call the main process for YouTube search
+      const results = await window.electronAPI.youtubeSearch(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+      // Fallback to mock results if search fails
+      const mockResults = [
+        {
+          id: 'yt1',
+          title: `${query} - Official Video`,
+          channel: 'Popular Channel',
+          duration: '3:45',
+          views: '1.2M views',
+          thumbnail: 'https://placehold.co/100x100',
+          url: 'https://youtube.com/watch?v=mock1'
+        },
+        {
+          id: 'yt2',
+          title: `${query} - Live Performance`,
+          channel: 'Music Channel',
+          duration: '5:20',
+          views: '856K views',
+          thumbnail: 'https://placehold.co/100x100',
+          url: 'https://youtube.com/watch?v=mock2'
+        },
+        {
+          id: 'yt3',
+          title: `${query} - Tutorial`,
+          channel: 'Tutorial Channel',
+          duration: '12:30',
+          views: '450K views',
+          thumbnail: 'https://placehold.co/100x100',
+          url: 'https://youtube.com/watch?v=mock3'
+        }
+      ];
       setSearchResults(mockResults);
+    } finally {
       setIsSearching(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -113,7 +118,7 @@ function Home() {
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {searchResults.map((result) => (
-              <div key={result.id} className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+              <div key={result.id} className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer" onClick={() => navigate(`/play/${result.id}`, { state: { video: result } })}>
                 <figure className="px-4 pt-4">
                   <img
                     src={result.thumbnail}
@@ -130,7 +135,7 @@ function Home() {
                   </div>
                   <div className="card-actions justify-end mt-3">
                     <button className="btn btn-primary btn-xs">Add to Library</button>
-                    <button className="btn btn-ghost btn-xs">Preview</button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => navigate(`/play/${result.id}`, { state: { video: result } })}>Play</button>
                   </div>
                 </div>
               </div>
@@ -139,46 +144,48 @@ function Home() {
         </div>
       )}
 
-      {/* Add New Media Tile */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-base-200 hover:bg-base-300 transition-colors cursor-pointer rounded-lg border border-base-300 flex items-center justify-center h-full min-h-[400px]">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+      {/* Add New Media Tile - Only show when no search results */}
+      {searchResults.length === 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-base-200 hover:bg-base-300 transition-colors cursor-pointer rounded-lg border border-base-300 flex items-center justify-center h-full min-h-[400px]">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Add New Media</h3>
+              <p className="text-sm text-base-content/70">Import your files</p>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Add New Media</h3>
-            <p className="text-sm text-base-content/70">Import your files</p>
           </div>
-        </div>
 
-        {/* Media Items */}
-        {mediaItems.map((item) => (
-          <div key={item.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer">
-            <figure className="px-6 pt-6">
-              <img
-                src="https://placehold.co/100x100"
-                alt={item.title}
-                className="w-full h-64 object-cover rounded-lg"
-              />
-            </figure>
-            <div className="card-body">
-              <h3 className="card-title text-base">{item.title}</h3>
-              <div className="text-sm text-base-content/70">
-                {item.artist && <p>Artist: {item.artist}</p>}
-                {item.year && <p>Year: {item.year}</p>}
-                {item.episodes && <p>Episodes: {item.episodes}</p>}
-                <p>Duration: {item.duration}</p>
-              </div>
-              <div className="card-actions justify-end mt-4">
-                <button className="btn btn-primary btn-sm">Play</button>
-                <button className="btn btn-ghost btn-sm">Details</button>
+          {/* Media Items */}
+          {mediaItems.map((item) => (
+            <div key={item.id} className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer">
+              <figure className="px-6 pt-6">
+                <img
+                  src="https://placehold.co/100x100"
+                  alt={item.title}
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              </figure>
+              <div className="card-body">
+                <h3 className="card-title text-base">{item.title}</h3>
+                <div className="text-sm text-base-content/70">
+                  {item.artist && <p>Artist: {item.artist}</p>}
+                  {item.year && <p>Year: {item.year}</p>}
+                  {item.episodes && <p>Episodes: {item.episodes}</p>}
+                  <p>Duration: {item.duration}</p>
+                </div>
+                <div className="card-actions justify-end mt-4">
+                  <button className="btn btn-primary btn-sm">Play</button>
+                  <button className="btn btn-ghost btn-sm">Details</button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -191,6 +198,63 @@ function Settings() {
   return <h1>Settings Page</h1>;
 }
 
+function VideoPlayer() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const video = location.state?.video;
+
+  if (!video) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Video Not Found</h1>
+          <button className="btn btn-primary" onClick={() => navigate('/')}>Go Back</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-screen bg-black flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 bg-black/80 text-white">
+        <button 
+          className="btn btn-ghost text-white" 
+          onClick={() => navigate('/')}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
+        <h1 className="text-lg font-semibold truncate max-w-md">{video.title}</h1>
+        <div className="w-16"></div> {/* Spacer for centering */}
+      </div>
+
+      {/* Video Player */}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-center text-white">
+            <div className="mb-4">
+              <svg className="w-24 h-24 mx-auto text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold mb-2">{video.title}</h2>
+            <p className="text-white/70 mb-4">{video.channel}</p>
+            <p className="text-sm text-white/50 mb-6">Video player integration coming soon...</p>
+            <div className="flex gap-2 justify-center">
+              <button className="btn btn-primary">Play Video</button>
+              <button className="btn btn-outline text-white border-white hover:bg-white hover:text-black">Download</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function NotFound() {
   return <h1>404 - Page Not Found</h1>;
 }
@@ -200,6 +264,7 @@ function App() {
     <div className="min-h-screen">
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/play/:id" element={<VideoPlayer />} />
         <Route path="/about" element={<About />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
