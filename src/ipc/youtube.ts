@@ -112,16 +112,24 @@ export function registerYouTubeHandlers() {
       const fileName = `${videoTitle}_${videoId}.mp4`;
       const filePath = path.join(downloadsDir, fileName);
        
-      // Check if file already exists
+      // Check if file already exists and is complete
       if (fs.existsSync(filePath)) {
-        console.log('Video already exists:', filePath);
-        return { 
-          success: true, 
-          filePath: filePath,
-          fileName: fileName,
-          title: videoInfo.videoDetails.title,
-          alreadyExists: true
-        };
+        const stats = fs.statSync(filePath);
+        // Check if file size is reasonable (> 1MB for videos)
+        if (stats.size > 1024 * 1024) {
+          console.log('Video already exists and appears complete:', filePath);
+          return { 
+            success: true, 
+            filePath: filePath,
+            fileName: fileName,
+            title: videoInfo.videoDetails.title,
+            fileSize: stats.size,
+            alreadyExists: true
+          };
+        } else {
+          console.log('Existing file appears incomplete, removing and re-downloading:', filePath);
+          fs.unlinkSync(filePath); // Remove incomplete file
+        }
       }
        
       console.log('Downloading to:', filePath);
@@ -134,13 +142,18 @@ export function registerYouTubeHandlers() {
         videoStream.pipe(writeStream);
          
         writeStream.on('finish', () => {
-          console.log('Download completed:', filePath);
+          // Verify file was written successfully
+          const stats = fs.statSync(filePath);
+          console.log('Download completed:', filePath, `(${stats.size} bytes)`);
+          
           resolve({ 
             success: true, 
             filePath: filePath,
             fileName: fileName,
             title: videoInfo.videoDetails.title,
-            alreadyExists: false
+            fileSize: stats.size,
+            alreadyExists: false,
+            downloadCompleted: new Date().toISOString()
           });
         });
          

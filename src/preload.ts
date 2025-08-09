@@ -27,5 +27,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   libraryUpdatePlayStats: (itemId: string) => ipcRenderer.invoke('library-update-play-stats', itemId),
   libraryClear: () => ipcRenderer.invoke('library-clear'),
   libraryExport: () => ipcRenderer.invoke('library-export'),
-  libraryImport: (jsonData: string, merge?: boolean) => ipcRenderer.invoke('library-import', jsonData, merge)
+  libraryImport: (jsonData: string, merge?: boolean) => ipcRenderer.invoke('library-import', jsonData, merge),
+
+  // Background download events
+  onStartBackgroundDownloads: (callback: () => void) => {
+    ipcRenderer.on('start-background-downloads', callback);
+    return () => ipcRenderer.removeListener('start-background-downloads', callback);
+  }
 });

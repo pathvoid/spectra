@@ -41,6 +41,23 @@ function Home() {
     }
   }, [forceReload, searchResults.length]);
 
+  // Listen for library updates from background downloads
+  useEffect(() => {
+    const handleLibraryUpdate = () => {
+      // Only reload if we're currently showing the library (no search results)
+      if (searchResults.length === 0) {
+        console.log('Library updated, refreshing display...');
+        forceReload();
+      }
+    };
+
+    window.addEventListener('library-updated', handleLibraryUpdate);
+    
+    return () => {
+      window.removeEventListener('library-updated', handleLibraryUpdate);
+    };
+  }, [forceReload, searchResults.length]);
+
   const handleSearch = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);

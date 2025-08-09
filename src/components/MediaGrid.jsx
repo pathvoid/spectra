@@ -175,6 +175,34 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
                 {formatDuration(item.lengthSeconds)}
               </div>
             )}
+
+            {/* Download status overlay */}
+            {item.downloadStatus && item.downloadStatus !== 'completed' && (
+              <div className="absolute inset-0 bg-base-content/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                <div className="bg-base-100 rounded-lg p-3 flex items-center gap-2">
+                  {item.downloadStatus === 'downloading' && (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      <span className="text-sm font-medium">Downloading...</span>
+                    </>
+                  )}
+                  {item.downloadStatus === 'pending' && (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      <span className="text-sm font-medium">Waiting to download...</span>
+                    </>
+                  )}
+                  {item.downloadStatus === 'failed' && (
+                    <>
+                      <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm font-medium text-error">Download failed</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </figure>
           
           <div className="card-body flex flex-col flex-grow">
@@ -212,22 +240,47 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
             {/* Buttons at the very bottom */}
             <div className="card-actions justify-between mt-4">
               <button 
-                className="btn btn-primary btn-sm"
+                className={`btn btn-sm ${
+                  item.downloadStatus === 'completed' 
+                    ? 'btn-primary' 
+                    : 'btn-disabled'
+                }`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  handlePlayMedia(item);
+                  if (item.downloadStatus === 'completed') {
+                    handlePlayMedia(item);
+                  }
                 }}
+                disabled={item.downloadStatus !== 'completed'}
+                title={
+                  item.downloadStatus === 'completed' 
+                    ? 'Play video' 
+                    : item.downloadStatus === 'downloading'
+                      ? 'Video is downloading...'
+                      : item.downloadStatus === 'pending'
+                        ? 'Video is queued for download...'
+                        : item.downloadStatus === 'failed'
+                          ? 'Download failed - remove and try adding again'
+                          : 'Video not ready'
+                }
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
                 </svg>
-                Play
+                {item.downloadStatus === 'completed' ? 'Play' : 
+                 item.downloadStatus === 'downloading' ? 'Downloading' :
+                 item.downloadStatus === 'pending' ? 'Queued' :
+                 item.downloadStatus === 'failed' ? 'Failed' : 'Not Ready'}
               </button>
               
               <button 
                 className="btn btn-error btn-sm"
                 onClick={(e) => handleRemoveItem(item, e)}
-                title="Remove from library and delete file"
+                title={
+                  item.downloadStatus === 'completed' 
+                    ? "Remove from library and delete file"
+                    : "Remove from library"
+                }
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H7a1 1 0 00-1 1v3" />

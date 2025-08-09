@@ -27,60 +27,93 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
       // Fetch complete video details first
       const videoDetails = await window.electronAPI.fetchVideoDetails(result.videoId);
       
-      // Use download manager to prevent concurrent downloads
-      const downloadResult = await downloadManager.startDownload(
+      // Create library item immediately with pending download status
+      const libraryItem = {
+        title: result.title,
+        channel: result.channel,
+        thumbnail: result.thumbnail,
+        videoId: result.videoId,
+        url: result.url,
+        lengthSeconds: videoDetails.lengthSeconds,
+        views: result.views,
+        type: 'video',
+        source: 'youtube',
+        // Download tracking - start as pending
+        downloadStatus: 'pending',
+        downloadStarted: new Date().toISOString(),
+        // Store complete video details for instant playback
+        videoDetails: {
+          title: videoDetails.title,
+          description: videoDetails.description,
+          author: videoDetails.author,
+          lengthSeconds: videoDetails.lengthSeconds,
+          viewCount: videoDetails.viewCount,
+          published: videoDetails.published,
+          videoThumbnails: videoDetails.videoThumbnails,
+          formatStreams: videoDetails.formatStreams,
+          adaptiveFormats: videoDetails.adaptiveFormats
+        },
+        cachedAt: new Date().toISOString()
+      };
+
+      // Add to library immediately
+      const addResult = await addLibraryItem(libraryItem);
+      
+      if (!addResult) {
+        console.error('Failed to add video to library:', result.title);
+        alert('Failed to add video to library. Please try again.');
+        return;
+      }
+
+      // Get the library item ID for updates
+      const libraryItems = await window.electronAPI.libraryGetItems();
+      const addedItem = libraryItems.items.find(item => item.videoId === result.videoId);
+      
+      if (!addedItem) {
+        console.error('Video added to library but could not find item for download start:', result.title);
+        return;
+      }
+
+      // Log to console instead of showing alert
+      console.log(`Added to library: ${result.title} - Starting download...`);
+
+      // Update status to downloading
+      await window.electronAPI.libraryUpdateItem(addedItem.id, {
+        downloadStatus: 'downloading'
+      });
+
+      // Start download in background
+      downloadManager.startDownload(
         result.videoId,
         () => window.electronAPI.downloadVideo(result.videoId)
-      );
-
-      if (downloadResult.success) {
-        // Create library item with complete video details and download information
-        const libraryItem = {
-          title: result.title,
-          channel: result.channel,
-          thumbnail: result.thumbnail,
-          videoId: result.videoId,
-          url: result.url,
-          filePath: downloadResult.filePath,
-          fileName: downloadResult.fileName,
-          lengthSeconds: videoDetails.lengthSeconds,
-          views: result.views,
-          type: 'video',
-          source: 'youtube',
-          // Store complete video details for instant playback
-          videoDetails: {
-            title: videoDetails.title,
-            description: videoDetails.description,
-            author: videoDetails.author,
-            lengthSeconds: videoDetails.lengthSeconds,
-            viewCount: videoDetails.viewCount,
-            published: videoDetails.published,
-            videoThumbnails: videoDetails.videoThumbnails,
-            formatStreams: videoDetails.formatStreams,
-            adaptiveFormats: videoDetails.adaptiveFormats
-          },
-          cachedAt: new Date().toISOString()
-        };
-
-        // Add to library
-        const addResult = await addLibraryItem(libraryItem);
-        
-        if (addResult) {
-          // Show appropriate message
-          if (downloadResult.alreadyExists) {
-            alert(`"${result.title}" was already downloaded and has been added to your library.`);
-          } else {
-            alert(`"${result.title}" has been added to your library and downloaded!`);
-          }
-          
-          // Force a storage sync to ensure other components can see the update
-          await window.electronAPI.settingsGet('userLibrary');
+      ).then(async (downloadResult) => {
+        if (downloadResult.success) {
+          // Update library item with completed download information
+          await window.electronAPI.libraryUpdateItem(addedItem.id, {
+            filePath: downloadResult.filePath,
+            fileName: downloadResult.fileName,
+            fileSize: downloadResult.fileSize,
+            downloadStatus: 'completed',
+            downloadCompleted: downloadResult.downloadCompleted || new Date().toISOString()
+          });
+          console.log(`Download completed: ${result.title}`);
         } else {
-          alert('Failed to add video to library. Please try again.');
+          // Mark as failed
+          await window.electronAPI.libraryUpdateItem(addedItem.id, {
+            downloadStatus: 'failed'
+          });
+          console.error(`Download failed: ${result.title}`);
         }
-      } else {
-        alert('Failed to process video. Please try again.');
-      }
+      }).catch(async (error) => {
+        // Mark as failed
+        await window.electronAPI.libraryUpdateItem(addedItem.id, {
+          downloadStatus: 'failed'
+        });
+        console.error(`Download error: ${result.title}`, error);
+      });
+
+      // Force a storage sync to ensure other components can see the update
+      await window.electronAPI.settingsGet('userLibrary');
     } catch (error) {
       console.error('Error adding video to library:', error);
       alert('An error occurred while adding the video to your library.');

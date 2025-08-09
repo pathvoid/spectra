@@ -32,6 +32,14 @@ const createWindow = () => {
   registerYouTubeHandlers();
   registerSettingsHandlers();
   registerLibraryHandlers();
+  
+  // Initialize background download service after window is ready
+  mainWindow.webContents.once('did-finish-load', () => {
+    // Give the renderer process a moment to initialize
+    setTimeout(() => {
+      mainWindow.webContents.send('start-background-downloads');
+    }, 2000);
+  });
 };
 
 // This method will be called when Electron has finished

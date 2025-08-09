@@ -1,10 +1,82 @@
 import { ipcMain } from 'electron';
 import settings from 'electron-settings';
+import fs from 'fs';
 
 /**
  * Library IPC Handlers
  * Manages user library operations and storage
  */
+
+interface LibraryItem {
+  [key: string]: unknown; // Index signature for electron-settings compatibility
+  id: string;
+  videoId: string;
+  title: string;
+  channel?: string;
+  thumbnail?: string;
+  url?: string;
+  filePath?: string;
+  fileName?: string;
+  lengthSeconds?: number;
+  views?: string;
+  dateAdded: string;
+  type: string;
+  tags: string[];
+  isFavorite: boolean;
+  playCount: number;
+  lastPlayed: string | null;
+  source?: string;
+  downloadStatus?: 'pending' | 'downloading' | 'completed' | 'failed';
+  downloadStarted?: string;
+  downloadCompleted?: string;
+  fileSize?: number;
+  videoDetails?: {
+    title: string;
+    description?: string;
+    author?: string;
+    lengthSeconds?: number;
+    viewCount?: number;
+    published?: string;
+    videoThumbnails?: unknown[];
+    formatStreams?: unknown[];
+    adaptiveFormats?: unknown[];
+  };
+  cachedAt?: string;
+}
+  
+/**
+ * Validate if a downloaded file is complete and not corrupted
+ */
+function validateVideoFile(filePath: string, expectedSize?: number): boolean {
+  try {
+    if (!fs.existsSync(filePath)) {
+      return false;
+    }
+
+    const stats = fs.statSync(filePath);
+    
+    // Check if file size is reasonable (> 1MB for videos)
+    if (stats.size < 1024 * 1024) {
+      console.log(`File too small, likely incomplete: ${filePath} (${stats.size} bytes)`);
+      return false;
+    }
+
+    // If we have expected size, check if it matches (allow 5% variance for encoding differences)
+    if (expectedSize && expectedSize > 0) {
+      const sizeDifference = Math.abs(stats.size - expectedSize) / expectedSize;
+      if (sizeDifference > 0.05) {
+        console.log(`File size mismatch: expected ~${expectedSize}, got ${stats.size}`);
+        return false;
+      }
+    }
+
+    // TODO: Could add more validation like checking file headers
+    return true;
+  } catch (error) {
+    console.error('Error validating file:', error);
+    return false;
+  }
+}
 
 export function registerLibraryHandlers() {
   // Add item to library with additional metadata
@@ -23,7 +95,7 @@ export function registerLibraryHandlers() {
         return { success: false, message: 'Item already exists in library' };
       }
 
-      const libraryItem = {
+      const libraryItem: LibraryItem = {
         ...item,
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         dateAdded: new Date().toISOString(),
@@ -31,7 +103,20 @@ export function registerLibraryHandlers() {
         tags: item.tags || [],
         isFavorite: false,
         playCount: 0,
-        lastPlayed: null
+        lastPlayed: null,
+        videoId: item.videoId || '',
+        title: item.title || 'Unknown Title',
+        // Set download status based on whether file exists and is valid
+        downloadStatus: item.filePath && validateVideoFile(item.filePath as string, item.fileSize as number) 
+          ? 'completed' 
+          : item.filePath 
+            ? 'failed'  // File exists but invalid
+            : 'pending', // No file yet
+        downloadStarted: item.downloadStarted as string,
+        downloadCompleted: item.filePath && validateVideoFile(item.filePath as string, item.fileSize as number) 
+          ? (item.downloadCompleted as string || new Date().toISOString())
+          : undefined,
+        fileSize: item.fileSize as number
       };
 
       library.push(libraryItem);

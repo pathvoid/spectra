@@ -4,6 +4,7 @@ import VideoPlayer from './pages/VideoPlayer';
 import About from './pages/About';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+import BackgroundDownloadStatus from './components/BackgroundDownloadStatus';
 
 function App() {
   return (
@@ -15,6 +16,9 @@ function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      
+      {/* Background download status indicator */}
+      <BackgroundDownloadStatus />
     </div>
   );
 }
