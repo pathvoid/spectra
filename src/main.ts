@@ -186,11 +186,32 @@ const createWindow = () => {
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    // Try multiple possible paths for the packaged app
+    const possiblePaths = [
+      path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
+      path.join(__dirname, '../renderer/index.html'),
+      path.join(__dirname, './index.html'),
+      path.join(process.resourcesPath, 'app/renderer/index.html')
+    ];
+    
+    let indexPath = possiblePaths[0]; // Default
+    
+    // Find the first path that exists
+    for (const testPath of possiblePaths) {
+      if (fs.existsSync(testPath)) {
+        indexPath = testPath;
+        console.log('Found index.html at:', indexPath);
+        break;
+      }
+    }
+    
+    mainWindow.loadFile(indexPath);
   }
 
-  // Open the DevTools
-  mainWindow.webContents.openDevTools();
+  // Open DevTools only in development
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    mainWindow.webContents.openDevTools();
+  }
 
   // Register all IPC handlers
   registerYouTubeHandlers();
