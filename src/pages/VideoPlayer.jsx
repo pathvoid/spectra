@@ -26,6 +26,40 @@ function VideoPlayer() {
     }
   }, [video]);
 
+  // Helper function to load video file safely (handles large files)
+  const loadVideoFile = async (filePath, title) => {
+    try {
+      const blobResult = await window.electronAPI.getVideoBlob(filePath);
+      if (blobResult.success) {
+        console.log(`Using existing downloaded file: ${filePath.split('/').pop() || filePath.split('\\').pop() || 'video'} (${blobResult.isLargeFile ? 'large file' : 'small file'})`);
+        
+        setDownloadedVideo({
+          success: true,
+          filePath: filePath,
+          fileName: blobResult.fileName,
+          title: title,
+          alreadyExists: true,
+          isLargeFile: blobResult.isLargeFile
+        });
+
+        // For large files, use file URL instead of blob URL
+        if (blobResult.isLargeFile) {
+          const fileUrlResult = await window.electronAPI.getVideoFileUrl(filePath);
+          if (fileUrlResult.success) {
+            setVideoDataUrl(fileUrlResult.fileUrl);
+          }
+        } else {
+          setVideoDataUrl(blobResult.dataUrl);
+        }
+        
+        return true;
+      }
+    } catch (err) {
+      console.log('Error loading video file:', err);
+    }
+    return false;
+  };
+
   const loadVideoData = async () => {
     if (!video?.videoId) return;
     
@@ -34,21 +68,10 @@ function VideoPlayer() {
       console.log('Using passed cached video details for instant loading');
       setVideoDetails(cachedVideoDetails);
       
-      try {
-        const blobResult = await window.electronAPI.getVideoBlob(cachedFilePath);
-        if (blobResult.success) {
-          console.log('Using existing downloaded file (instant)');
-          setDownloadedVideo({
-            success: true,
-            filePath: cachedFilePath,
-            fileName: cachedFilePath.split('/').pop() || 'video.mp4',
-            title: video.title,
-            alreadyExists: true
-          });
-          setVideoDataUrl(blobResult.dataUrl);
-          return; // Skip all other loading since we have everything
-        }
-      } catch (err) {
+      const loaded = await loadVideoFile(cachedFilePath, video.title);
+      if (loaded) {
+        return; // Skip all other loading since we have everything
+      } else {
         console.log('Cached file not accessible, checking library');
       }
     }
@@ -63,21 +86,10 @@ function VideoPlayer() {
       
       // Check if the file still exists
       if (cachedVideo.filePath) {
-        try {
-          const blobResult = await window.electronAPI.getVideoBlob(cachedVideo.filePath);
-          if (blobResult.success) {
-            console.log('Using existing downloaded file from library');
-            setDownloadedVideo({
-              success: true,
-              filePath: cachedVideo.filePath,
-              fileName: cachedVideo.fileName,
-              title: cachedVideo.title,
-              alreadyExists: true
-            });
-            setVideoDataUrl(blobResult.dataUrl);
-            return; // Skip downloading since we have the file
-          }
-        } catch (err) {
+        const loaded = await loadVideoFile(cachedVideo.filePath, cachedVideo.title);
+        if (loaded) {
+          return; // Skip downloading since we have the file
+        } else {
           console.log('Cached file not accessible, will re-download');
         }
       }
@@ -118,12 +130,9 @@ function VideoPlayer() {
       );
       setDownloadedVideo(result);
       
-      // Get the video as a blob URL for secure playback
+      // Get the video as a blob/file URL for secure playback
       if (result.success) {
-        const blobResult = await window.electronAPI.getVideoBlob(result.filePath);
-        if (blobResult.success) {
-          setVideoDataUrl(blobResult.dataUrl);
-        }
+        await loadVideoFile(result.filePath, result.title || video?.title);
       }
     } catch (err) {
       setError('Failed to download video');

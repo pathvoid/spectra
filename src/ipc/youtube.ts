@@ -4,6 +4,11 @@ import fs from 'node:fs';
 import play from 'play-dl';
 import ytdl from '@distube/ytdl-core';
 
+// Global type declaration for file path mapping
+declare global {
+  var getFilePathFromId: ((id: string) => string | undefined) | undefined;
+}
+
 /**
  * YouTube and Video IPC Handlers
  * Manages YouTube search, video details, and download functionality
@@ -167,21 +172,61 @@ export function registerYouTubeHandlers() {
     }
   });
    
-  // IPC handler for getting video file as blob URL
+  // IPC handler for getting video file as file path (safer for large files)
   ipcMain.handle('get-video-blob', async (event, filePath) => {
     try {
-      // Read the file and convert to base64
-      const videoBuffer = fs.readFileSync(filePath);
-      const base64Data = videoBuffer.toString('base64');
-       
-      return {
-        success: true,
-        dataUrl: `data:video/mp4;base64,${base64Data}`,
-        fileName: path.basename(filePath)
-      };
+      // Check if file exists and get basic info without reading content
+      if (!fs.existsSync(filePath)) {
+        return {
+          success: false,
+          error: 'File not found'
+        };
+      }
+
+      const stats = fs.statSync(filePath);
+      
+      // For large files (>50MB), don't create blob URLs as they can crash the app
+      if (stats.size > 50 * 1024 * 1024) {
+        console.log(`Large file detected (${Math.round(stats.size / 1024 / 1024)}MB), using file path instead of blob`);
+        return {
+          success: true,
+          filePath: filePath,
+          fileName: path.basename(filePath),
+          fileSize: stats.size,
+          isLargeFile: true
+        };
+      }
+
+      // For smaller files, still create blob URL
+      try {
+        const videoBuffer = fs.readFileSync(filePath);
+        const base64Data = videoBuffer.toString('base64');
+         
+        return {
+          success: true,
+          dataUrl: `data:video/mp4;base64,${base64Data}`,
+          filePath: filePath,
+          fileName: path.basename(filePath),
+          fileSize: stats.size,
+          isLargeFile: false
+        };
+      } catch (readError) {
+        console.error('Error reading file for blob creation:', readError);
+        // Fall back to file path approach
+        return {
+          success: true,
+          filePath: filePath,
+          fileName: path.basename(filePath),
+          fileSize: stats.size,
+          isLargeFile: true
+        };
+      }
     } catch (error) {
-      console.error('Error getting video blob:', error);
-      throw error;
+      console.error('Error getting video info:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   });
 
@@ -201,6 +246,50 @@ export function registerYouTubeHandlers() {
       return { success: false, error: error.message };
     }
   });
+
+  // Store file paths with simple IDs to avoid encoding issues
+  const filePathMap = new Map<string, string>();
+
+  // IPC handler for getting local file URL for video playback
+  ipcMain.handle('get-video-file-url', async (event, filePath) => {
+    try {
+      if (!fs.existsSync(filePath)) {
+        return {
+          success: false,
+          error: 'File not found'
+        };
+      }
+
+      // Generate a simple unique ID for this file
+      const fileId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+      
+      // Store the mapping
+      filePathMap.set(fileId, filePath);
+      
+      // Create URL with simple ID
+      const fileUrl = `spectra-video://${fileId}`;
+      
+      console.log(`Created custom protocol URL for large file: ${path.basename(filePath)} (ID: ${fileId})`);
+      
+      return {
+        success: true,
+        fileUrl: fileUrl,
+        filePath: filePath,
+        fileName: path.basename(filePath)
+      };
+    } catch (error) {
+      console.error('Error creating file URL:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  });
+
+  // Export the file path map so main.ts can access it
+  global.getFilePathFromId = (id: string) => {
+    return filePathMap.get(id);
+  };
 
   console.log('YouTube IPC handlers registered successfully');
 }

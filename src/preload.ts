@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fetchVideoDetails: (videoId: string) => ipcRenderer.invoke('fetch-video-details', videoId),
   downloadVideo: (videoId: string) => ipcRenderer.invoke('download-video', videoId),
   getVideoBlob: (filePath: string) => ipcRenderer.invoke('get-video-blob', filePath),
+  getVideoFileUrl: (filePath: string) => ipcRenderer.invoke('get-video-file-url', filePath),
   deleteVideoFile: (filePath: string) => ipcRenderer.invoke('delete-video-file', filePath),
   
   // Settings functionality

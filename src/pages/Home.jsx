@@ -5,6 +5,7 @@ import SearchResults from '../components/SearchResults';
 import MediaGrid from '../components/MediaGrid';
 import useLibrary from '../hooks/useLibrary';
 import useSettings from '../hooks/useSettings';
+import { validateYouTubeUrl } from '../utils/youtubeUrlParser';
 
 function Home() {
   const location = useLocation();
@@ -66,6 +67,33 @@ function Home() {
       return;
     }
 
+    // Check if the query is a YouTube URL
+    const urlValidation = validateYouTubeUrl(query);
+    if (urlValidation.isValid) {
+      console.log(`Detected YouTube URL, opening video: ${urlValidation.videoId}`);
+      
+      // Navigate directly to video player with the extracted video ID
+      const videoForPlayer = {
+        videoId: urlValidation.videoId,
+        title: `YouTube Video (${urlValidation.videoId})`,
+        url: query.trim()
+      };
+
+      navigate(`/play/${urlValidation.videoId}`, {
+        state: {
+          video: videoForPlayer,
+          searchQuery: query,
+          searchResults: []
+        }
+      });
+      return;
+    }
+
+    if (!urlValidation.isValid && urlValidation.reason === 'YouTube Shorts are not supported') {
+      alert('YouTube Shorts are not supported. Please use regular YouTube videos.');
+      return;
+    }
+
     setIsSearching(true);
     
     try {
@@ -73,6 +101,7 @@ function Home() {
       const results = await window.electronAPI.youtubeSearch(query);
       setSearchResults(results);
     } catch (error) {
+      console.error('Search error:', error);
       // Show empty results if search fails
       setSearchResults([]);
     } finally {

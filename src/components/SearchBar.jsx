@@ -4,7 +4,7 @@ function SearchBar({ searchQuery, setSearchQuery, onSearch, isSearching }) {
       <div className="relative w-96">
         <input
           type="text"
-          placeholder="Search videos..."
+          placeholder="Search videos or paste YouTube URL..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSearch(searchQuery)}
