@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import SearchResults from '../components/SearchResults';
 import MediaGrid from '../components/MediaGrid';
+import useLibrary from '../hooks/useLibrary';
+import useSettings from '../hooks/useSettings';
 
 function Home() {
   const location = useLocation();
@@ -11,20 +13,39 @@ function Home() {
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
-  const mediaItems = [
-    { id: 1, title: 'The Great Adventure', type: 'movie', year: 2023, duration: '2h 15m' },
-    { id: 2, title: 'Mystery of the Night', type: 'movie', year: 2022, duration: '1h 45m' },
-    { id: 3, title: 'Summer Vibes', type: 'music', artist: 'Chill Wave', duration: '3m 45s' },
-    { id: 4, title: 'Tech Talk Podcast', type: 'podcast', episodes: 12, duration: '45m' },
-    { id: 5, title: 'Nature Documentary', type: 'documentary', year: 2024, duration: '1h 30m' },
-    { id: 6, title: 'Classic Rock Hits', type: 'music', artist: 'Various Artists', duration: '1h 20m' },
-    { id: 7, title: 'Comedy Special', type: 'standup', year: 2023, duration: '1h 15m' },
-    { id: 8, title: 'Educational Series', type: 'series', episodes: 8, duration: '30m each' }
-  ];
+  // Use library and settings hooks
+  const { 
+    isLoading: libraryLoading, 
+    error: libraryError,
+    getFilteredItems,
+    forceReload
+  } = useLibrary();
+
+  const { 
+    isLoading: settingsLoading,
+    sortBy,
+    sortOrder
+  } = useSettings();
+
+  // Get filtered and sorted library items for display
+  const displayItems = getFilteredItems({
+    sortBy,
+    sortOrder
+  });
+
+  // Reload library when component mounts or when navigating back to home
+  useEffect(() => {
+    // Only reload if we don't have search results (meaning we're showing library)
+    if (searchResults.length === 0) {
+      forceReload();
+    }
+  }, [forceReload, searchResults.length]);
 
   const handleSearch = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
+      // Reload library when clearing search to show updated items
+      forceReload();
       return;
     }
 
@@ -50,6 +71,7 @@ function Home() {
         <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => {
           setSearchQuery('');
           setSearchResults([]);
+          forceReload(); // Reload library when going back to home
           navigate('/', { replace: true });
         }}>
           <div>
@@ -77,9 +99,61 @@ function Home() {
         />
       )}
 
-      {/* Add New Media Tile - Only show when no search results */}
+      {/* Library Section - Only show when no search results */}
       {searchResults.length === 0 && (
-        <MediaGrid mediaItems={mediaItems} />
+        <div>
+          {/* Library Header */}
+          {displayItems.length > 0 && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className='text-xl font-semibold text-base-content'>
+                  Your Library ({displayItems.length} items)
+                </h2>
+                <div className="text-sm text-base-content/70">
+                  {libraryLoading && 'Loading...'}
+                  {libraryError && (
+                    <span className='text-error'>Error: {libraryError}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Show loading state */}
+          {(libraryLoading || settingsLoading) && (
+            <div className="flex items-center justify-center py-12">
+              <span className="loading loading-spinner loading-lg"></span>
+              <span className="ml-3 text-base-content/70">Loading your library...</span>
+            </div>
+          )}
+          
+          {/* Show empty state */}
+          {!libraryLoading && !settingsLoading && displayItems.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-base-content">Your Library is Empty</h3>
+              <p className="text-base-content/70 mb-4">
+                Search for videos above and download them to build your personal library.
+              </p>
+              <p className="text-sm text-base-content/50">
+                Downloaded videos will appear here for offline viewing.
+              </p>
+            </div>
+          )}
+          
+          {/* Show library items */}
+          {!libraryLoading && !settingsLoading && displayItems.length > 0 && (
+            <MediaGrid 
+              mediaItems={displayItems} 
+              showAddButton={false} 
+              onItemRemoved={forceReload}
+            />
+          )}
+        </div>
       )}
     </div>
   );

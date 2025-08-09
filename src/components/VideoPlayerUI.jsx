@@ -6,7 +6,6 @@ function VideoPlayerUI({
   isDownloading,
   downloadedVideo,
   videoDataUrl,
-  videoRef,
   setVideoRef,
   searchQuery,
   searchResults,

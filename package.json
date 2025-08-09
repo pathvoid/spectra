@@ -46,6 +46,7 @@
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
     "@tailwindcss/vite": "^4.1.11",
+    "electron-settings": "^4.0.4",
     "electron-squirrel-startup": "^1.0.1",
     "play-dl": "^1.9.7",
     "react": "^19.1.1",
