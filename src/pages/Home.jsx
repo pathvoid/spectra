@@ -76,7 +76,7 @@ function Home() {
         }}>
           <div>
             <h1 className="text-2xl font-bold text-primary">Spectra</h1>
-            <p className="text-sm text-base-content/70">Media Center</p>
+            <p className="text-sm text-base-content/70">Privacy in every frame</p>
           </div>
         </div>
 

@@ -123,7 +123,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
           return (
             <div 
               key={result.id} 
-              className="card bg-base-100 shadow-lg hover:shadow-xl transition-shadow cursor-pointer" 
+              className="card bg-base-200 shadow-lg hover:shadow-xl transition-shadow cursor-pointer" 
               onClick={() => handlePlayVideo(result)}
             >
               <figure className="px-4 pt-4 relative">

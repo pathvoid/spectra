@@ -151,7 +151,7 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
       {mediaItems.map((item) => (
         <div 
           key={item.id} 
-          className="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer flex flex-col h-full"
+          className="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer flex flex-col h-full"
           onClick={() => handlePlayMedia(item)}
         >
           <figure className="px-6 pt-6 relative">
