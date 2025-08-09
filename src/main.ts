@@ -1,7 +1,8 @@
-import { app, BrowserWindow, protocol } from 'electron';
+import { app, BrowserWindow, protocol, screen } from 'electron';
 import path from 'node:path';
 import fs from 'fs';
 import started from 'electron-squirrel-startup';
+import settings from 'electron-settings';
 import { registerSettingsHandlers, registerLibraryHandlers, registerYouTubeHandlers } from './ipc';
 
 // Global type declaration for file path mapping
@@ -169,11 +170,51 @@ app.whenReady().then(() => {
   });
 });
 
-const createWindow = () => {
+const createWindow = async () => {
+  // Get saved window state or use defaults
+  const defaultWindowState: {
+    width: number;
+    height: number;
+    x: number | undefined;
+    y: number | undefined;
+    isMaximized: boolean;
+  } = {
+    width: 1200,
+    height: 800,
+    x: undefined,
+    y: undefined,
+    isMaximized: false
+  };
+
+  const savedWindowState = await settings.get('windowState') as typeof defaultWindowState || defaultWindowState;
+  
+  // Validate saved state (ensure window is visible on available displays)
+  const displays = screen.getAllDisplays();
+  const windowState = { ...defaultWindowState, ...savedWindowState };
+  
+  // Check if saved position is still valid (display might have been disconnected)
+  if (windowState.x !== undefined && windowState.y !== undefined) {
+    const isVisibleOnAnyDisplay = displays.some((display: Electron.Display) => {
+      const { x, y, width, height } = display.bounds;
+      return typeof windowState.x === 'number' && typeof windowState.y === 'number' &&
+             windowState.x >= x && windowState.x < x + width &&
+             windowState.y >= y && windowState.y < y + height;
+    });
+    
+    if (!isVisibleOnAnyDisplay) {
+      // Reset position if window would be off-screen
+      windowState.x = undefined;
+      windowState.y = undefined;
+    }
+  }
+
   // Create the browser window
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: windowState.width,
+    height: windowState.height,
+    x: windowState.x,
+    y: windowState.y,
+    show: false, // Don't show until ready
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       webSecurity: false, // Allow local file access for video playback
@@ -207,6 +248,72 @@ const createWindow = () => {
     
     mainWindow.loadFile(indexPath);
   }
+
+  // Restore maximized state
+  if (windowState.isMaximized) {
+    mainWindow.maximize();
+  }
+
+  // Show window once it's ready
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+
+  // Save window state when it changes (throttled to prevent excessive saves)
+  let saveTimeout: NodeJS.Timeout | null = null;
+  const saveWindowState = async () => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    saveTimeout = setTimeout(async () => {
+      try {
+        const bounds = mainWindow.getBounds();
+        const isMaximized = mainWindow.isMaximized();
+        
+        await settings.set('windowState', {
+          width: bounds.width,
+          height: bounds.height,
+          x: bounds.x,
+          y: bounds.y,
+          isMaximized: isMaximized
+        });
+        
+        console.log('Window state saved:', { width: bounds.width, height: bounds.height, x: bounds.x, y: bounds.y, isMaximized });
+      } catch (error) {
+        console.error('Failed to save window state:', error);
+      }
+    }, 500); // Save after 500ms of no changes
+  };
+
+  // Listen for window state changes
+  mainWindow.on('resize', saveWindowState);
+  mainWindow.on('move', saveWindowState);
+  mainWindow.on('maximize', saveWindowState);
+  mainWindow.on('unmaximize', saveWindowState);
+
+  // Save state immediately when app is closing (bypass throttling)
+  mainWindow.on('close', async () => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    try {
+      const bounds = mainWindow.getBounds();
+      const isMaximized = mainWindow.isMaximized();
+      
+      await settings.set('windowState', {
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        isMaximized: isMaximized
+      });
+      
+      console.log('Final window state saved on close');
+    } catch (error) {
+      console.error('Failed to save window state on close:', error);
+    }
+  });
 
   // Register all IPC handlers
   registerYouTubeHandlers();
