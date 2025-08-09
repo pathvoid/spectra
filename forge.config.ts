@@ -10,7 +10,17 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: 'images/icon_1754742203_512x512.png',
+    icon: 'images/icon_1754742203_512x512', // Don't include extension - Electron will choose the right format
+    // Platform-specific icon configuration
+    ...(process.platform === 'win32' && {
+      icon: 'images/icon.ico', // Windows needs .ico format
+    }),
+    ...(process.platform === 'darwin' && {
+      icon: 'images/icon.icns', // macOS needs .icns format
+    }),
+    ...(process.platform === 'linux' && {
+      icon: 'images/icon_1754742203_512x512.png', // Linux can use PNG
+    }),
   },
   rebuildConfig: {},
   makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],

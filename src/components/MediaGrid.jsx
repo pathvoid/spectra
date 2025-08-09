@@ -131,7 +131,7 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
       {/* Add New Media Button - Only show if enabled */}
       {showAddButton && (
         <div className="bg-base-200 hover:bg-base-300 transition-colors cursor-pointer rounded-lg border border-base-300 flex items-center justify-center h-full min-h-[400px]">
@@ -154,11 +154,11 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
           className="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer flex flex-col h-full"
           onClick={() => handlePlayMedia(item)}
         >
-          <figure className="px-6 pt-6 relative">
+          <figure className="px-4 sm:px-6 pt-4 sm:pt-6 relative">
             <img
               src={item.thumbnail || item.videoThumbnails?.[0]?.url || 'https://placehold.co/320x180/374151/9ca3af?text=No+Thumbnail'}
               alt={item.title}
-              className="w-full h-48 object-cover rounded-lg"
+              className="w-full h-32 sm:h-40 lg:h-48 object-cover rounded-lg"
               onError={(e) => {
                 e.target.src = 'https://placehold.co/320x180/374151/9ca3af?text=No+Thumbnail';
               }}
@@ -206,7 +206,7 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
           </figure>
           
           <div className="card-body flex flex-col flex-grow">
-            <h3 className="card-title text-base line-clamp-2" title={item.title}>
+            <h3 className="card-title text-sm sm:text-base line-clamp-2" title={item.title}>
               {item.title}
             </h3>
             
@@ -240,7 +240,7 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
             {/* Buttons at the very bottom */}
             <div className="card-actions justify-between mt-4">
               <button 
-                className={`btn btn-sm ${
+                className={`btn btn-xs sm:btn-sm ${
                   item.downloadStatus === 'completed' 
                     ? 'btn-primary' 
                     : 'btn-disabled'
@@ -274,7 +274,7 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
               </button>
               
               <button 
-                className="btn btn-error btn-sm"
+                className="btn btn-error btn-xs sm:btn-sm"
                 onClick={(e) => handleRemoveItem(item, e)}
                 title={
                   item.downloadStatus === 'completed' 
