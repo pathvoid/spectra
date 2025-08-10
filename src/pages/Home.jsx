@@ -44,6 +44,15 @@ function Home() {
     }
   }, [forceReload, searchResults.length]);
 
+  // Recalculate library search results when searchResults are received from navigation
+  useEffect(() => {
+    // If we have search results from navigation and a search query, also search library
+    if (searchResults.length > 0 && searchedQuery && searchedQuery.trim()) {
+      const libraryMatches = searchLibraryItems(searchedQuery);
+      setLibrarySearchResults(libraryMatches);
+    }
+  }, [searchResults, searchedQuery, libraryItems]);
+
   // Listen for library updates from background downloads
   useEffect(() => {
     const handleLibraryUpdate = () => {
