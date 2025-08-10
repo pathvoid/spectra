@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import useLibrary from '../hooks/useLibrary';
 import { getSourceConfig } from '../utils/sourceManager';
 
-function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
+function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved, showInLibraryIndicator = false }) {
   const navigate = useNavigate();
   const { removeLibraryItem, updatePlayStats } = useLibrary();
 
@@ -152,7 +152,14 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
                 }}
               />
             
-
+              {/* In Library indicator */}
+              {showInLibraryIndicator && (
+                <div className="absolute top-6 right-6 bg-success/90 text-success-content rounded-full p-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
             
               {/* Duration overlay */}
               {item.lengthSeconds && (
@@ -226,12 +233,35 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
             
               {/* Buttons at the very bottom */}
               <div className="card-actions justify-between mt-4">
+                {showInLibraryIndicator ? (
+                  <button 
+                    className="btn btn-success btn-xs"
+                    disabled
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    In Library
+                  </button>
+                ) : (
+                  <button 
+                    className="btn btn-error btn-xs"
+                    onClick={(e) => handleRemoveItem(item, e)}
+                    title={
+                      item.downloadStatus === 'completed' 
+                        ? 'Remove from library and delete file'
+                        : 'Remove from library'
+                    }
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H7a1 1 0 00-1 1v3" />
+                    </svg>
+                    Remove
+                  </button>
+                )}
+              
                 <button 
-                  className={`btn btn-xs sm:btn-sm ${
-                    item.downloadStatus === 'completed' 
-                      ? 'btn-primary' 
-                      : 'btn-disabled'
-                  }`}
+                  className="btn btn-ghost btn-xs"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (item.downloadStatus === 'completed') {
@@ -251,28 +281,10 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
                             : 'Video not ready'
                   }
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
                   </svg>
-                  {item.downloadStatus === 'completed' ? 'Play' : 
-                    item.downloadStatus === 'downloading' ? 'Downloading' :
-                      item.downloadStatus === 'pending' ? 'Queued' :
-                        item.downloadStatus === 'failed' ? 'Failed' : 'Not Ready'}
-                </button>
-              
-                <button 
-                  className="btn btn-error btn-xs sm:btn-sm"
-                  onClick={(e) => handleRemoveItem(item, e)}
-                  title={
-                    item.downloadStatus === 'completed' 
-                      ? 'Remove from library and delete file'
-                      : 'Remove from library'
-                  }
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H7a1 1 0 00-1 1v3" />
-                  </svg>
-                Remove
+                  Play
                 </button>
               </div>
             </div>

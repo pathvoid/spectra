@@ -12,6 +12,7 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState(location.state?.searchQuery || '');
   const [searchedQuery, setSearchedQuery] = useState(location.state?.searchQuery || '');
   const [searchResults, setSearchResults] = useState(location.state?.searchResults || []);
+  const [librarySearchResults, setLibrarySearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
@@ -20,7 +21,8 @@ function Home() {
     isLoading: libraryLoading, 
     error: libraryError,
     getFilteredItems,
-    forceReload
+    forceReload,
+    libraryItems
   } = useLibrary();
 
   const { 
@@ -58,9 +60,111 @@ function Home() {
     };
   }, [forceReload]);
 
+  // Function to calculate Levenshtein distance between two strings
+  const levenshteinDistance = (str1, str2) => {
+    const matrix = [];
+    
+    for (let i = 0; i <= str2.length; i++) {
+      matrix[i] = [i];
+    }
+    
+    for (let j = 0; j <= str1.length; j++) {
+      matrix[0][j] = j;
+    }
+    
+    for (let i = 1; i <= str2.length; i++) {
+      for (let j = 1; j <= str1.length; j++) {
+        if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+    
+    return matrix[str2.length][str1.length];
+  };
+
+  // Function to calculate similarity score (0-1, where 1 is exact match)
+  const calculateSimilarity = (str1, str2) => {
+    const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase());
+    const maxLength = Math.max(str1.length, str2.length);
+    return maxLength === 0 ? 1 : (maxLength - distance) / maxLength;
+  };
+
+  // Function to search library items with fuzzy matching
+  const searchLibraryItems = (query) => {
+    if (!query.trim()) return [];
+    
+    const searchTerm = query.toLowerCase().trim();
+    const results = [];
+    const similarityThreshold = 0.3; // Minimum similarity score (30%)
+    
+    libraryItems.forEach(item => {
+      let bestScore = 0;
+      let matchedField = '';
+      
+      // Check title similarity
+      const titleScore = calculateSimilarity(searchTerm, item.title);
+      if (titleScore > bestScore) {
+        bestScore = titleScore;
+        matchedField = 'title';
+      }
+      
+      // Check channel similarity
+      if (item.channel) {
+        const channelScore = calculateSimilarity(searchTerm, item.channel);
+        if (channelScore > bestScore) {
+          bestScore = channelScore;
+          matchedField = 'channel';
+        }
+      }
+      
+      // Check tags similarity
+      if (item.tags && Array.isArray(item.tags)) {
+        item.tags.forEach(tag => {
+          const tagScore = calculateSimilarity(searchTerm, tag);
+          if (tagScore > bestScore) {
+            bestScore = tagScore;
+            matchedField = 'tag';
+          }
+        });
+      }
+      
+      // Check for exact substring matches (higher priority)
+      const exactTitleMatch = item.title.toLowerCase().includes(searchTerm);
+      const exactChannelMatch = item.channel && item.channel.toLowerCase().includes(searchTerm);
+      const exactTagMatch = item.tags && item.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+      
+      if (exactTitleMatch || exactChannelMatch || exactTagMatch) {
+        bestScore = Math.max(bestScore, 0.8); // Boost exact matches
+      }
+      
+      // Add to results if similarity is above threshold
+      if (bestScore >= similarityThreshold) {
+        results.push({
+          ...item,
+          searchScore: bestScore,
+          matchedField: matchedField
+        });
+      }
+    });
+    
+    // Sort by relevance (highest score first)
+    results.sort((a, b) => b.searchScore - a.searchScore);
+    
+    // Remove search metadata before returning
+    return results.map(({ searchScore, matchedField, ...item }) => item);
+  };
+
   const handleSearch = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
+      setLibrarySearchResults([]);
       setSearchedQuery('');
       // Reload library when clearing search to show updated items
       forceReload();
@@ -100,7 +204,11 @@ function Home() {
     setIsSearching(true);
     
     try {
-      // Use IPC to call the main process for YouTube search
+      // First, search library items
+      const libraryMatches = searchLibraryItems(query);
+      setLibrarySearchResults(libraryMatches);
+      
+      // Then, search external sources (YouTube)
       const results = await window.electronAPI.youtubeSearch(query);
       setSearchResults(results);
     } catch (error) {
@@ -131,17 +239,40 @@ function Home() {
       </div>
 
       {/* Search Results */}
-      {searchResults.length > 0 && (
-        <SearchResults 
-          results={searchResults}
-          searchQuery={searchedQuery}
-          searchResults={searchResults}
-          navigate={navigate}
-        />
+      {(searchResults.length > 0 || librarySearchResults.length > 0) && (
+        <div>
+          {/* Library Search Results */}
+          {librarySearchResults.length > 0 && (
+            <div className="mb-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-base-content">
+                  Library Results for "{searchedQuery}" ({librarySearchResults.length} videos)
+                </h2>
+                <p className="text-sm text-base-content/70">Videos already in your library</p>
+              </div>
+              <MediaGrid 
+                mediaItems={librarySearchResults} 
+                showAddButton={false} 
+                onItemRemoved={forceReload}
+                showInLibraryIndicator={true}
+              />
+            </div>
+          )}
+
+          {/* External Search Results */}
+          {searchResults.length > 0 && (
+            <SearchResults 
+              results={searchResults}
+              searchQuery={searchedQuery}
+              searchResults={searchResults}
+              navigate={navigate}
+            />
+          )}
+        </div>
       )}
 
       {/* Library Section - Only show when no search results */}
-      {searchResults.length === 0 && (
+      {searchResults.length === 0 && librarySearchResults.length === 0 && (
         <div>
           {/* Show loading state */}
           {(libraryLoading || settingsLoading) && (

@@ -6,7 +6,7 @@ import { getSourceConfig } from '../utils/sourceManager';
 function SearchResults({ results, searchQuery, searchResults, navigate }) {
   const [downloadingItems, setDownloadingItems] = useState(new Set());
   const [libraryStatus, setLibraryStatus] = useState(new Map()); // videoId -> boolean
-  const { addLibraryItem, itemExists, forceReload } = useLibrary();
+  const { addLibraryItem, itemExists, forceReload, libraryItems } = useLibrary();
   
   // Helper function to check library status directly from storage (bypasses hook cache)
   const checkLibraryDirect = async (videoId) => {
@@ -19,11 +19,18 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
     }
   };
   
+  // Filter out results that are already in the library
+  const filteredResults = results.filter(result => {
+    const inLibraryHook = itemExists(result.videoId, null);
+    const inLibraryDirect = libraryItems.some(item => item.videoId === result.videoId);
+    return !inLibraryHook && !inLibraryDirect;
+  });
+  
   // Update library status map when library data changes
   useEffect(() => {
     const updateLibraryStatus = async () => {
       const newStatus = new Map();
-      for (const result of results) {
+      for (const result of filteredResults) {
         const inLibraryHook = itemExists(result.videoId, null);
         const inLibraryDirect = await checkLibraryDirect(result.videoId);
         const actualInLibrary = inLibraryHook || inLibraryDirect;
@@ -33,7 +40,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
     };
     
     updateLibraryStatus();
-  }, [results, itemExists]);
+  }, [filteredResults, itemExists]);
 
   // Listen for library updates to refresh state and clear downloading items
   useEffect(() => {
@@ -47,7 +54,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
       // Update library status for all videos
       const updateStatus = async () => {
         const newStatus = new Map();
-        for (const result of results) {
+        for (const result of filteredResults) {
           const inLibraryDirect = await checkLibraryDirect(result.videoId);
           newStatus.set(result.videoId, inLibraryDirect);
         }
@@ -67,7 +74,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
       setDownloadingItems(prev => {
         const newSet = new Set(prev);
         // Remove by videoId from results
-        results.forEach(result => {
+        filteredResults.forEach(result => {
           if (result.videoId === videoId) {
             newSet.delete(result.id);
           }
@@ -83,7 +90,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
       window.removeEventListener('library-updated', handleLibraryUpdate);
       window.removeEventListener('video-download-completed', handleVideoDownloadCompleted);
     };
-  }, [forceReload, results]);
+  }, [forceReload, filteredResults]);
 
   // Clean up downloading state when component unmounts or results change
   useEffect(() => {
@@ -92,7 +99,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
     
     // Also check if any videos that are supposedly downloading are actually already in library
     // This handles cases where downloads completed while component was unmounted
-    results.forEach(async (result) => {
+    filteredResults.forEach(async (result) => {
       if (downloadManager.isDownloading(result.videoId)) {
         // Check both hook state and direct storage to be sure
         const inLibraryHook = itemExists(result.videoId, null);
@@ -104,7 +111,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
         }
       }
     });
-  }, [results, itemExists]);
+  }, [filteredResults, itemExists]);
 
   const handleAddToLibrary = async (result, e) => {
     e.stopPropagation();
@@ -216,7 +223,7 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
             console.log(`✅ Added to library (new download): ${result.title}`);
           }
           
-          // Clear this item from downloading state since it's completed
+          // Clear this item from downloading state since it completed
           setDownloadingItems(prev => {
             const newSet = new Set(prev);
             newSet.delete(result.id);
@@ -303,16 +310,22 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
     });
   };
 
+  // Don't render anything if all results are filtered out
+  if (filteredResults.length === 0) {
+    return null;
+  }
+
   return (
     <div className="mb-8">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-base-content">
-          Search Results for "{searchQuery}" ({results.length} videos)
+          Search Results for "{searchQuery}" ({filteredResults.length} videos)
         </h2>
+        <p className="text-sm text-base-content/70">Videos from external sources</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {results.map((result) => {
+        {filteredResults.map((result) => {
           const isDownloading = downloadingItems.has(result.id);
           const isDownloadingGlobally = downloadManager.isDownloading(result.videoId);
           const inLibraryHook = itemExists(result.videoId, null);
