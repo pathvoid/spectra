@@ -15,7 +15,7 @@ function VideoPlayerUI({
   return (
     <div className="w-full h-screen bg-black flex flex-col">
       {/* Header */}
-      <div className="absolute top-0 left-0 z-50 p-4">
+      <div className="absolute top-0 left-0 z-50 p-4 lg:left-64">
         <button 
           className="btn btn-ghost text-white hover:bg-white/10" 
           onClick={() => navigate('/', { state: { searchQuery, searchResults } })}
