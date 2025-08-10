@@ -1,14 +1,12 @@
-name: CI/CD Pipeline
+name: CI CD Pipeline
 
 on:
   push:
     branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-  # Trigger on tag pushes for releases
-  push:
     tags:
       - 'v*' # e.g., v1.0.0, v1.2.3
+  pull_request:
+    branches: [ main ]
 
 jobs:
   # Build and test on every commit/PR
