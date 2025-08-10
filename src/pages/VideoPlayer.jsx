@@ -19,6 +19,8 @@ function VideoPlayer() {
   const [videoRef, setVideoRef] = useState(null);
   const [videoDataUrl, setVideoDataUrl] = useState(null);
   const downloadStartedRef = useRef(false);
+  const currentVideoPathRef = useRef(null);
+  const currentVideoDataUrlRef = useRef(null);
 
   useEffect(() => {
     if (video?.videoId) {
@@ -42,14 +44,17 @@ function VideoPlayer() {
           isLargeFile: blobResult.isLargeFile
         });
 
-        // For large files, use file URL instead of blob URL
-        if (blobResult.isLargeFile) {
-          const fileUrlResult = await window.electronAPI.getVideoFileUrl(filePath);
-          if (fileUrlResult.success) {
-            setVideoDataUrl(fileUrlResult.fileUrl);
-          }
-        } else {
-          setVideoDataUrl(blobResult.dataUrl);
+        // Only set videoDataUrl if it's different from current value to prevent re-initialization
+        // Case-insensitive path comparison
+        const pathsAreEqual = currentVideoPathRef.current && 
+          currentVideoPathRef.current.toLowerCase() === filePath.toLowerCase();
+        
+        if (!pathsAreEqual) {
+          // For Video.js, always use the direct file path instead of custom protocol
+          // This works better with large files and avoids protocol issues
+          setVideoDataUrl(filePath);
+          currentVideoPathRef.current = filePath;
+          currentVideoDataUrlRef.current = filePath;
         }
         
         return true;
@@ -130,12 +135,19 @@ function VideoPlayer() {
       );
       setDownloadedVideo(result);
       
-      // Get the video as a blob/file URL for secure playback
+      // Set videoDataUrl for new downloads only (not already loaded videos)
+      // Case-insensitive path comparison
+      const pathsAreEqual = currentVideoPathRef.current && 
+        currentVideoPathRef.current.toLowerCase() === result.filePath.toLowerCase();
+      
+      if (result.success && !currentVideoDataUrlRef.current && !pathsAreEqual) {
+        setVideoDataUrl(result.filePath);
+        currentVideoPathRef.current = result.filePath;
+        currentVideoDataUrlRef.current = result.filePath;
+      }
+      
+      // Notify other components that download completed
       if (result.success) {
-        await loadVideoFile(result.filePath, result.title || video?.title);
-        
-        // Notify other components that download completed
-        console.log(`VideoPlayer download completed for ${video.title || video.videoId}`);
         window.dispatchEvent(new CustomEvent('video-download-completed', {
           detail: { videoId: video.videoId, result }
         }));
@@ -144,14 +156,13 @@ function VideoPlayer() {
       setError('Failed to download video');
       
       // Notify other components that download failed
-      console.log(`VideoPlayer download failed for ${video.title || video.videoId}`);
       window.dispatchEvent(new CustomEvent('video-download-completed', {
         detail: { videoId: video.videoId, result: { success: false, error: err } }
       }));
     } finally {
       setIsDownloading(false);
     }
-  }, [video?.videoId]);
+  }, [video?.videoId]); // Removed videoDataUrl from dependencies
 
   // Auto-download when component mounts (only if we don't have the file)
   useEffect(() => {

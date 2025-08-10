@@ -1,4 +1,4 @@
-import { app, autoUpdater, BrowserWindow, protocol, screen, Menu } from 'electron';
+import { app, BrowserWindow, protocol, screen, Menu } from 'electron';
 import path from 'node:path';
 import fs from 'fs';
 import started from 'electron-squirrel-startup';
@@ -12,20 +12,6 @@ declare global {
 
 // Check if we're in development mode
 const isDevelopment = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
-
-// Auto-update
-if (!isDevelopment) {
-  const server = 'https://update.electronjs.org';
-  const feed = `${server}/pathvoid/spectra/${process.platform}-${process.arch}/${app.getVersion()}`;
-
-  autoUpdater.setFeedURL({
-    url: feed
-  });
-
-  setInterval(() => {
-    autoUpdater.checkForUpdates();
-  }, 10 * 60 * 1000);
-}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
 if (started) {

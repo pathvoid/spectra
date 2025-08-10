@@ -1,3 +1,7 @@
+import { useEffect, useRef, useState } from 'react';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
+
 function VideoPlayerUI({
   video,
   videoDetails,
@@ -12,6 +16,89 @@ function VideoPlayerUI({
   navigate,
   fetchVideoDetails
 }) {
+  const videoRef = useRef(null);
+  const playerRef = useRef(null);
+  const [playerReady, setPlayerReady] = useState(false);
+
+  useEffect(() => {
+    // Only use videoDataUrl as the video source to prevent refresh issues
+    const videoSource = videoDataUrl;
+    
+    // Only initialize if we have a video source and the element exists
+    if (!videoSource || !videoRef.current) {
+      return;
+    }
+
+    // Don't re-initialize if we already have a player with the same source
+    if (playerRef.current && playerRef.current.currentSrc() === videoSource) {
+      return;
+    }
+
+    // Clean up any existing player
+    if (playerRef.current) {
+      playerRef.current.dispose();
+      playerRef.current = null;
+      setPlayerReady(false);
+    }
+
+    // Create a new video element for Video.js
+    const videoElement = document.createElement('video');
+    videoElement.className = 'video-js vjs-default-skin vjs-big-play-centered';
+    videoElement.style.width = '100%';
+    videoElement.style.height = '100%';
+    
+    // Replace the existing video element
+    if (videoRef.current) {
+      videoRef.current.innerHTML = '';
+      videoRef.current.appendChild(videoElement);
+    }
+
+    // Initialize Video.js player
+    const player = videojs(videoElement, {
+      autoplay: true,
+      controls: true,
+      responsive: true,
+      fluid: false,
+      width: '100%',
+      height: '100%',
+      sources: [{
+        src: videoSource,
+        type: 'video/mp4'
+      }],
+      preload: 'metadata',
+      playbackRates: [0.5, 1, 1.25, 1.5, 2],
+      controlBar: {
+        children: [
+          'playToggle',
+          'volumePanel',
+          'currentTimeDisplay',
+          'timeDivider',
+          'durationDisplay',
+          'progressControl',
+          'playbackRateMenuButton',
+          'fullscreenToggle'
+        ]
+      }
+    }, () => {
+      console.log('Video.js player is ready');
+      setPlayerReady(true);
+      if (setVideoRef) {
+        setVideoRef(player);
+      }
+    });
+
+    playerRef.current = player;
+
+    // Cleanup function
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+        setPlayerReady(false);
+      }
+    };
+  }, [videoDataUrl]);
+
   return (
     <div className="w-full h-screen bg-black flex flex-col">
       {/* Header */}
@@ -49,16 +136,8 @@ function VideoPlayerUI({
           <div className="w-full h-full flex flex-col">
             {/* Video Player - Full Screen */}
             {downloadedVideo && videoDataUrl ? (
-              <div className="w-full h-full flex items-center justify-center overflow-hidden">
-                <video
-                  ref={setVideoRef}
-                  controls
-                  className="max-w-full max-h-full object-contain"
-                  src={videoDataUrl}
-                  autoPlay
-                >
-                   Your browser does not support the video tag.
-                </video>
+              <div className="w-full h-full">
+                <div ref={videoRef} className="w-full h-full" />
               </div>
             ) : (
             /* Download Status - Centered */
