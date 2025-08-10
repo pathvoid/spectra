@@ -68,7 +68,8 @@ function VideoPlayerUI({
                     <div>
                       <div className="loading loading-spinner loading-lg mb-4"></div>
                       <h2 className="text-2xl font-bold mb-2">Downloading Video</h2>
-                      <p className="text-white/70">Please wait while we download the video...</p>
+                      <p className="text-white/70 mb-2">Please wait while we download the video...</p>
+                      <p className="text-white/50 text-lg">{videoDetails.title}</p>
                     </div>
                   ) : (
                     <div>
