@@ -6,7 +6,7 @@ import { getSourceConfig } from '../utils/sourceManager';
 function SearchResults({ results, searchQuery, searchResults, navigate }) {
   const [downloadingItems, setDownloadingItems] = useState(new Set());
   const [libraryStatus, setLibraryStatus] = useState(new Map()); // videoId -> boolean
-  const { addLibraryItem, itemExists, forceReload, libraryItems } = useLibrary();
+  const { addLibraryItem, itemExists, forceReload } = useLibrary();
   
   // Helper function to check library status directly from storage (bypasses hook cache)
   const checkLibraryDirect = async (videoId) => {

@@ -18,8 +18,7 @@ function Home() {
 
   // Use library and settings hooks
   const { 
-    isLoading: libraryLoading, 
-    error: libraryError,
+    isLoading: libraryLoading,
     getFilteredItems,
     forceReload,
     libraryItems
@@ -164,7 +163,7 @@ function Home() {
     results.sort((a, b) => b.searchScore - a.searchScore);
     
     // Remove search metadata before returning
-    return results.map(({ searchScore, matchedField, ...item }) => item);
+    return results.map(({ ...item }) => item);
   };
 
   const handleSearch = async (query) => {
