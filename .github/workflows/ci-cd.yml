@@ -57,7 +57,7 @@ jobs:
   # Create releases when tags are pushed
   release:
     name: Create Release
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build-and-test
     if: startsWith(github.ref, 'refs/tags/')
     
