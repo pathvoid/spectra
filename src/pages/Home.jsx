@@ -114,23 +114,14 @@ function Home() {
 
   return (
     <div className="w-full p-6">
-      {/* Header with Branding and Search */}
-      <div className="mb-6 flex items-center justify-between">
-        {/* Branding */}
-        <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => {
-          setSearchQuery('');
-          setSearchedQuery('');
-          setSearchResults([]);
-          forceReload(); // Reload library when going back to home
-          navigate('/', { replace: true });
-        }}>
-          <div>
-            <h1 className="text-2xl font-bold text-primary">Spectra</h1>
-            <p className="text-sm text-base-content/70">Privacy in every frame</p>
-          </div>
-        </div>
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-base-content mb-2">Your Library</h1>
+        <p className="text-base-content/70">Your downloaded videos and media collection</p>
+      </div>
 
-        {/* Search Bar - Centered */}
+      {/* Search Bar */}
+      <div className="mb-6 flex items-center justify-center">
         <SearchBar 
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -152,23 +143,6 @@ function Home() {
       {/* Library Section - Only show when no search results */}
       {searchResults.length === 0 && (
         <div>
-          {/* Library Header */}
-          {displayItems.length > 0 && (
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className='text-xl font-semibold text-base-content'>
-                  Your Library ({displayItems.length} items)
-                </h2>
-                <div className="text-sm text-base-content/70">
-                  {libraryLoading && 'Loading...'}
-                  {libraryError && (
-                    <span className='text-error'>Error: {libraryError}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          
           {/* Show loading state */}
           {(libraryLoading || settingsLoading) && (
             <div className="flex items-center justify-center py-12">
