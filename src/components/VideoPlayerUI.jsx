@@ -18,6 +18,8 @@ function VideoPlayerUI({
 }) {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
+
+  // eslint-disable-next-line
   const [playerReady, setPlayerReady] = useState(false);
 
   useEffect(() => {
