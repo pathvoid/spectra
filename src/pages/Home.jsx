@@ -10,6 +10,7 @@ import { validateYouTubeUrl } from '../utils/youtubeUrlParser';
 function Home() {
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState(location.state?.searchQuery || '');
+  const [searchedQuery, setSearchedQuery] = useState(location.state?.searchQuery || '');
   const [searchResults, setSearchResults] = useState(location.state?.searchResults || []);
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
@@ -60,10 +61,14 @@ function Home() {
   const handleSearch = async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
+      setSearchedQuery('');
       // Reload library when clearing search to show updated items
       forceReload();
       return;
     }
+
+    // Set the searched query to the current search term
+    setSearchedQuery(query.trim());
 
     // Check if the query is a YouTube URL
     const urlValidation = validateYouTubeUrl(query);
@@ -114,6 +119,7 @@ function Home() {
         {/* Branding */}
         <div className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => {
           setSearchQuery('');
+          setSearchedQuery('');
           setSearchResults([]);
           forceReload(); // Reload library when going back to home
           navigate('/', { replace: true });
@@ -137,7 +143,7 @@ function Home() {
       {searchResults.length > 0 && (
         <SearchResults 
           results={searchResults}
-          searchQuery={searchQuery}
+          searchQuery={searchedQuery}
           searchResults={searchResults}
           navigate={navigate}
         />

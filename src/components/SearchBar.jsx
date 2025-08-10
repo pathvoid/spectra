@@ -11,7 +11,7 @@ function SearchBar({ searchQuery, setSearchQuery, onSearch, isSearching }) {
           className="input input-bordered w-full pl-10 pr-4"
         />
         <svg
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/50"
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-base-content/50 pointer-events-none z-10"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
