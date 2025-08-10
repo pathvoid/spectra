@@ -48,8 +48,6 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
     }
   };
 
-
-
   const handleRemoveItem = async (item, e) => {
     e.stopPropagation();
     if (!item.id) return;
@@ -108,73 +106,17 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-    const getMediaTypeIcon = (type) => {
-    switch (type) {
-      case 'video':
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-          </svg>
-        );
-      case 'music':
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-        </svg>
-        );
-      default:
-        return (
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        );
-    }
-  };
-
   const getSourceInfo = (source) => {
     const config = getSourceConfig(source);
     
-    // Get appropriate icon based on source
-    let icon;
-    switch (source) {
-      case 'youtube':
-        icon = (
-          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-          </svg>
-        );
-        break;
-      case 'vimeo':
-        icon = (
-          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M23.977 6.416c-.105 2.338-1.739 5.543-4.894 9.609-3.268 4.247-6.026 6.37-8.29 6.37-1.409 0-2.578-1.294-3.553-3.881L5.322 11.4C4.603 8.816 3.834 7.522 3.01 7.522c-.179 0-.806.378-1.881 1.132L0 7.197a315.065 315.065 0 0 0 2.618-2.618C3.895 3.289 5.003 2.727 5.915 2.727c2.252-.012 3.66 1.322 4.17 4.045.54 2.911.913 4.711 1.111 5.381.587 2.677 1.259 4.015 2.016 4.015.587 0 1.484-.926 2.692-2.757 1.207-1.831 1.854-3.228 1.942-4.202.179-1.611-.464-2.417-1.942-2.417-.694 0-1.417.157-2.153.471 1.430-4.681 4.157-6.962 8.185-6.851 2.983.089 4.392 2.025 4.241 5.825z"/>
-          </svg>
-        );
-        break;
-      case 'local':
-        icon = (
-          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-          </svg>
-        );
-        break;
-      default:
-        icon = (
-          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
-        );
-    }
-    
     return {
       name: config.name,
-      color: config.color,
-      icon: icon
+      color: config.color
     };
   };
 
   return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
       {/* Add New Media Button - Only show if enabled */}
       {showAddButton && (
         <div className="bg-base-200 hover:bg-base-300 transition-colors cursor-pointer rounded-lg border border-base-300 flex items-center justify-center h-full min-h-[400px]">
@@ -195,160 +137,146 @@ function MediaGrid({ mediaItems, showAddButton = true, onItemRemoved }) {
         const sourceInfo = getSourceInfo(item.source);
         
         return (
-        <div 
-          key={item.id} 
-          className="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer flex flex-col h-full"
-          onClick={() => handlePlayMedia(item)}
-        >
-          <figure className="px-4 sm:px-6 pt-4 sm:pt-6 relative">
-            <img
-              src={item.thumbnail || item.videoThumbnails?.[0]?.url || 'https://placehold.co/320x180/374151/9ca3af?text=No+Thumbnail'}
-              alt={item.title}
-              className="w-full h-32 sm:h-40 lg:h-48 object-cover rounded-lg"
-              onError={(e) => {
-                e.target.src = 'https://placehold.co/320x180/374151/9ca3af?text=No+Thumbnail';
-              }}
-            />
-            
-            {/* Source indicator */}
-            <div className={`absolute top-8 left-8 ${sourceInfo.color} text-white rounded-full p-2 flex items-center gap-1`}>
-              {sourceInfo.icon}
-              <span className="text-xs font-medium">{sourceInfo.name}</span>
-            </div>
-
-            {/* Media type indicator */}
-            <div className="absolute top-8 right-8 bg-base-100/90 backdrop-blur-sm rounded-full p-2">
-              {getMediaTypeIcon(item.type)}
-            </div>
-            
-            {/* Duration overlay */}
-            {item.lengthSeconds && (
-              <div className="absolute bottom-8 right-8 bg-base-content/90 text-base-100 px-2 py-1 rounded text-xs font-medium">
-                {formatDuration(item.lengthSeconds)}
-              </div>
-            )}
-
-            {/* Download status overlay */}
-            {item.downloadStatus && item.downloadStatus !== 'completed' && (
-              <div className="absolute inset-0 bg-base-content/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                <div className="bg-base-100 rounded-lg p-3 flex items-center gap-2">
-                  {item.downloadStatus === 'downloading' && (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      <span className="text-sm font-medium">Downloading...</span>
-                    </>
-                  )}
-                  {item.downloadStatus === 'pending' && (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      <span className="text-sm font-medium">Waiting to download...</span>
-                    </>
-                  )}
-                  {item.downloadStatus === 'failed' && (
-                    <>
-                      <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="text-sm font-medium text-error">Download failed</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </figure>
-          
-          <div className="card-body flex flex-col flex-grow">
-            <h3 className="card-title text-sm sm:text-base line-clamp-2" title={item.title}>
-              {item.title}
-            </h3>
-            
-            <div className="text-sm text-base-content/70 space-y-1 flex-grow">
-              {item.channel && (
-                <p className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  {item.channel}
-                </p>
-              )}
-              
-              {item.views && (
-                <p className="flex items-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  {item.views}
-                </p>
-              )}
-              
-              {item.source && (
-                <p className="flex items-center gap-2 text-xs">
-                  {sourceInfo.icon}
-                  <span>Source: {sourceInfo.name}</span>
-                </p>
-              )}
-              
-              {item.dateAdded && (
-                <p className="text-xs text-base-content/50">
-                  Added {new Date(item.dateAdded).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-            
-            {/* Buttons at the very bottom */}
-            <div className="card-actions justify-between mt-4">
-              <button 
-                className={`btn btn-xs sm:btn-sm ${
-                  item.downloadStatus === 'completed' 
-                    ? 'btn-primary' 
-                    : 'btn-disabled'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (item.downloadStatus === 'completed') {
-                    handlePlayMedia(item);
-                  }
+          <div 
+            key={item.id} 
+            className="card bg-base-200 shadow-xl hover:shadow-2xl transition-shadow cursor-pointer flex flex-col h-full"
+            onClick={() => handlePlayMedia(item)}
+          >
+            <figure className="px-4 sm:px-6 pt-4 sm:pt-6 relative">
+              <img
+                src={item.thumbnail || item.videoThumbnails?.[0]?.url || 'https://placehold.co/320x180/374151/9ca3af?text=No+Thumbnail'}
+                alt={item.title}
+                className="w-full h-32 sm:h-40 lg:h-48 object-cover rounded-lg"
+                onError={(e) => {
+                  e.target.src = 'https://placehold.co/320x180/374151/9ca3af?text=No+Thumbnail';
                 }}
-                disabled={item.downloadStatus !== 'completed'}
-                title={
-                  item.downloadStatus === 'completed' 
-                    ? 'Play video' 
-                    : item.downloadStatus === 'downloading'
-                      ? 'Video is downloading...'
-                      : item.downloadStatus === 'pending'
-                        ? 'Video is queued for download...'
-                        : item.downloadStatus === 'failed'
-                          ? 'Download failed - remove and try adding again'
-                          : 'Video not ready'
-                }
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-                </svg>
-                {item.downloadStatus === 'completed' ? 'Play' : 
-                 item.downloadStatus === 'downloading' ? 'Downloading' :
-                 item.downloadStatus === 'pending' ? 'Queued' :
-                 item.downloadStatus === 'failed' ? 'Failed' : 'Not Ready'}
-              </button>
+              />
+            
+
+            
+              {/* Duration overlay */}
+              {item.lengthSeconds && (
+                <div className="absolute bottom-2 right-8 bg-base-content/90 text-base-100 px-2 py-1 rounded text-xs font-medium">
+                  {formatDuration(item.lengthSeconds)}
+                </div>
+              )}
+
+              {/* Download status overlay */}
+              {item.downloadStatus && item.downloadStatus !== 'completed' && (
+                <div className="absolute inset-0 bg-base-content/50 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                  <div className="bg-base-100 rounded-lg p-3 flex items-center gap-2">
+                    {item.downloadStatus === 'downloading' && (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        <span className="text-sm font-medium">Downloading...</span>
+                      </>
+                    )}
+                    {item.downloadStatus === 'pending' && (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        <span className="text-sm font-medium">Waiting to download...</span>
+                      </>
+                    )}
+                    {item.downloadStatus === 'failed' && (
+                      <>
+                        <svg className="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-sm font-medium text-error">Download failed</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </figure>
+          
+            <div className="card-body flex flex-col flex-grow">
+              <h3 className="card-title text-sm sm:text-base line-clamp-2" title={item.title}>
+                {item.title}
+              </h3>
+            
+              <div className="text-sm text-base-content/70 space-y-1 flex-grow">
+                {item.channel && (
+                  <p className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    {item.channel}
+                  </p>
+                )}
               
-              <button 
-                className="btn btn-error btn-xs sm:btn-sm"
-                onClick={(e) => handleRemoveItem(item, e)}
-                title={
-                  item.downloadStatus === 'completed' 
-                    ? "Remove from library and delete file"
-                    : "Remove from library"
-                }
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H7a1 1 0 00-1 1v3" />
-                </svg>
+                {item.views && (
+                  <p className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    {item.views}
+                  </p>
+                )}
+              
+                {item.source && (
+                  <p className="flex items-center gap-2 text-xs">
+                    <span>Source: {sourceInfo.name}</span>
+                  </p>
+                )}
+              
+
+              </div>
+            
+              {/* Buttons at the very bottom */}
+              <div className="card-actions justify-between mt-4">
+                <button 
+                  className={`btn btn-xs sm:btn-sm ${
+                    item.downloadStatus === 'completed' 
+                      ? 'btn-primary' 
+                      : 'btn-disabled'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (item.downloadStatus === 'completed') {
+                      handlePlayMedia(item);
+                    }
+                  }}
+                  disabled={item.downloadStatus !== 'completed'}
+                  title={
+                    item.downloadStatus === 'completed' 
+                      ? 'Play video' 
+                      : item.downloadStatus === 'downloading'
+                        ? 'Video is downloading...'
+                        : item.downloadStatus === 'pending'
+                          ? 'Video is queued for download...'
+                          : item.downloadStatus === 'failed'
+                            ? 'Download failed - remove and try adding again'
+                            : 'Video not ready'
+                  }
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                  </svg>
+                  {item.downloadStatus === 'completed' ? 'Play' : 
+                    item.downloadStatus === 'downloading' ? 'Downloading' :
+                      item.downloadStatus === 'pending' ? 'Queued' :
+                        item.downloadStatus === 'failed' ? 'Failed' : 'Not Ready'}
+                </button>
+              
+                <button 
+                  className="btn btn-error btn-xs sm:btn-sm"
+                  onClick={(e) => handleRemoveItem(item, e)}
+                  title={
+                    item.downloadStatus === 'completed' 
+                      ? 'Remove from library and delete file'
+                      : 'Remove from library'
+                  }
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H7a1 1 0 00-1 1v3" />
+                  </svg>
                 Remove
-              </button>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         );
       })}
     </div>
