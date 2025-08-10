@@ -18,12 +18,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [18, 20]
-        # Only run on Ubuntu for PRs to save resources
-        exclude:
-          - os: windows-latest
-            if: github.event_name == 'pull_request'
-          - os: macos-latest
-            if: github.event_name == 'pull_request'
 
     steps:
     - name: Checkout code
