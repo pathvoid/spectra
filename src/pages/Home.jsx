@@ -51,6 +51,12 @@ function Home() {
       // Always reload library data when it's updated, regardless of current view
       console.log('Library updated, refreshing display...');
       forceReload();
+      
+      // If we have search results, update the library search results to include newly added videos
+      if (searchedQuery && searchedQuery.trim()) {
+        const updatedLibraryMatches = searchLibraryItems(searchedQuery);
+        setLibrarySearchResults(updatedLibraryMatches);
+      }
     };
 
     window.addEventListener('library-updated', handleLibraryUpdate);
@@ -58,7 +64,7 @@ function Home() {
     return () => {
       window.removeEventListener('library-updated', handleLibraryUpdate);
     };
-  }, [forceReload]);
+  }, [forceReload, searchedQuery]);
 
   // Function to calculate Levenshtein distance between two strings
   const levenshteinDistance = (str1, str2) => {
@@ -208,7 +214,7 @@ function Home() {
       const libraryMatches = searchLibraryItems(query);
       setLibrarySearchResults(libraryMatches);
       
-      // Then, search external sources (YouTube)
+      // Then, search external sources (YouTube) - library videos will be shown with "In Library" indicator
       const results = await window.electronAPI.youtubeSearch(query);
       setSearchResults(results);
     } catch (error) {
@@ -219,6 +225,28 @@ function Home() {
       setIsSearching(false);
     }
   };
+
+  // Function to clear search and return to library view
+  const clearSearchAndReturnToLibrary = () => {
+    setSearchResults([]);
+    setLibrarySearchResults([]);
+    setSearchQuery('');
+    setSearchedQuery('');
+    forceReload();
+  };
+
+  // Listen for custom event to clear search (triggered by branding click)
+  useEffect(() => {
+    const handleClearSearch = () => {
+      clearSearchAndReturnToLibrary();
+    };
+
+    window.addEventListener('clear-search-and-return', handleClearSearch);
+    
+    return () => {
+      window.removeEventListener('clear-search-and-return', handleClearSearch);
+    };
+  }, []);
 
   return (
     <div className="w-full p-6">

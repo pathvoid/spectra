@@ -29,7 +29,14 @@ function Sidebar({ isOpen, onClose }) {
   ];
 
   const handleNavigation = (path) => {
-    navigate(path);
+    // If navigating to home and we're already on home, clear search results
+    if (path === '/' && location.pathname === '/') {
+      window.dispatchEvent(new CustomEvent('clear-search-and-return'));
+    } else {
+      // For all other routes, use normal navigation
+      navigate(path);
+    }
+    
     if (window.innerWidth < 1024) {
       onClose();
     }
@@ -61,7 +68,12 @@ function Sidebar({ isOpen, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-base-300">
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-primary">Spectra</h1>
+            <button 
+              onClick={() => handleNavigation('/')}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <h1 className="text-xl font-bold text-primary">Spectra</h1>
+            </button>
           </div>
           <button 
             onClick={onClose}

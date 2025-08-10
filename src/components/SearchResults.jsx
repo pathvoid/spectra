@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import useLibrary from '../hooks/useLibrary';
 import downloadManager from '../services/downloadManager';
 import { getSourceConfig } from '../utils/sourceManager';
@@ -19,12 +19,11 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
     }
   };
   
-  // Filter out results that are already in the library
-  const filteredResults = results.filter(result => {
-    const inLibraryHook = itemExists(result.videoId, null);
-    const inLibraryDirect = libraryItems.some(item => item.videoId === result.videoId);
-    return !inLibraryHook && !inLibraryDirect;
-  });
+  // Filter out results that are already in the library - memoized to prevent infinite loops
+  const filteredResults = useMemo(() => {
+    // Don't filter out videos that are in the library - just show them with "In Library" indicator
+    return results;
+  }, [results]);
   
   // Update library status map when library data changes
   useEffect(() => {
@@ -217,10 +216,10 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
           console.log(`Library update result for ${result.title}:`, updateResult);
           
           if (downloadResult.alreadyExists) {
-            console.log(`✅ Added to library (file already existed): ${result.title}`);
-            console.log(`📁 Using existing file: ${downloadResult.fileName}`);
+            console.log(`Added to library (file already existed): ${result.title}`);
+            console.log(`Using existing file: ${downloadResult.fileName}`);
           } else {
-            console.log(`✅ Added to library (new download): ${result.title}`);
+            console.log(`Added to library (new download): ${result.title}`);
           }
           
           // Clear this item from downloading state since it completed
@@ -331,9 +330,6 @@ function SearchResults({ results, searchQuery, searchResults, navigate }) {
           const inLibraryHook = itemExists(result.videoId, null);
           const inLibraryMap = libraryStatus.get(result.videoId) || false;
           const inLibrary = inLibraryHook || inLibraryMap; // Use either source as truth
-          
-          // Debug logging to understand state - now logging for all items to see the issue
-          console.log(`${result.title} - Local: ${isDownloading}, Global: ${isDownloadingGlobally}, Library (hook): ${inLibraryHook}, Library (map): ${inLibraryMap}, Final: ${inLibrary}`);
           
           // Determine if we should show downloading state
           // If video is in library, never show downloading regardless of download manager state
