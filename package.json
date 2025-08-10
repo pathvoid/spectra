@@ -1,8 +1,8 @@
 {
   "name": "spectra",
   "productName": "Spectra",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "version": "0.0.1",
+  "description": "Privacy in every frame.",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
