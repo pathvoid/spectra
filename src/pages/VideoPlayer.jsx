@@ -133,9 +133,21 @@ function VideoPlayer() {
       // Get the video as a blob/file URL for secure playback
       if (result.success) {
         await loadVideoFile(result.filePath, result.title || video?.title);
+        
+        // Notify other components that download completed
+        console.log(`VideoPlayer download completed for ${video.title || video.videoId}`);
+        window.dispatchEvent(new CustomEvent('video-download-completed', {
+          detail: { videoId: video.videoId, result }
+        }));
       }
     } catch (err) {
       setError('Failed to download video');
+      
+      // Notify other components that download failed
+      console.log(`VideoPlayer download failed for ${video.title || video.videoId}`);
+      window.dispatchEvent(new CustomEvent('video-download-completed', {
+        detail: { videoId: video.videoId, result: { success: false, error: err } }
+      }));
     } finally {
       setIsDownloading(false);
     }

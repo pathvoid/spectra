@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import play from 'play-dl';
 import ytdl from '@distube/ytdl-core';
+import { getSourceDirectory } from '../utils/sourceManager.js';
 
 // Global type declaration for file path mapping
 declare global {
@@ -51,7 +52,8 @@ export function registerYouTubeHandlers() {
             views: formatViews(result.views),
             thumbnail: result.thumbnails?.[0]?.url || 'https://placehold.co/100x100',
             url: result.url,
-            videoId: videoId
+            videoId: videoId,
+            source: 'youtube' // Add source field to all YouTube results
           };
         });
 
@@ -97,16 +99,23 @@ export function registerYouTubeHandlers() {
   });
    
   // IPC handler for downloading video
-  ipcMain.handle('download-video', async (event, videoId) => {
+  // Downloads are organized in subdirectories by source (e.g., downloads/youtube/, downloads/vimeo/)
+  ipcMain.handle('download-video', async (event, videoId, source = 'youtube') => {
     try {
       // Get video info first
       const videoInfo = await ytdl.getInfo(`https://www.youtube.com/watch?v=${videoId}`);
       const videoTitle = videoInfo.videoDetails.title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
        
-      // Create downloads directory if it doesn't exist
+      // Create downloads directory structure based on source
       const downloadsDir = path.join(app.getPath('userData'), 'downloads');
+      const sourceDirName = getSourceDirectory(source);
+      const sourceDir = path.join(downloadsDir, sourceDirName);
+      
       if (!fs.existsSync(downloadsDir)) {
         fs.mkdirSync(downloadsDir, { recursive: true });
+      }
+      if (!fs.existsSync(sourceDir)) {
+        fs.mkdirSync(sourceDir, { recursive: true });
       }
        
       // Choose the best quality format that includes both audio and video
@@ -115,7 +124,7 @@ export function registerYouTubeHandlers() {
         filter: 'audioandvideo' // This ensures we get a format with both audio and video
       });
       const fileName = `${videoTitle}_${videoId}.mp4`;
-      const filePath = path.join(downloadsDir, fileName);
+      const filePath = path.join(sourceDir, fileName);
        
       // Check if file already exists and is complete
       if (fs.existsSync(filePath)) {
@@ -129,6 +138,7 @@ export function registerYouTubeHandlers() {
             fileName: fileName,
             title: videoInfo.videoDetails.title,
             fileSize: stats.size,
+            source: source,
             alreadyExists: true
           };
         } else {
@@ -157,6 +167,7 @@ export function registerYouTubeHandlers() {
             fileName: fileName,
             title: videoInfo.videoDetails.title,
             fileSize: stats.size,
+            source: source,
             alreadyExists: false,
             downloadCompleted: new Date().toISOString()
           });

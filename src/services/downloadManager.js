@@ -72,13 +72,13 @@ class DownloadManager {
         throw error;
       })
       .finally(() => {
-        // Clean up active download
+        // Clean up active download immediately
         this.activeDownloads.delete(videoId);
         
         // Keep state for a short time for debugging, then clean up
         setTimeout(() => {
           this.downloadStates.delete(videoId);
-        }, 30000); // Keep for 30 seconds
+        }, 5000); // Keep for 5 seconds instead of 30
       });
 
     // Store the promise
@@ -110,6 +110,15 @@ class DownloadManager {
    */
   getActiveDownloads() {
     return Array.from(this.activeDownloads.keys());
+  }
+
+  /**
+   * Clear download state for a specific video (useful for cleanup)
+   */
+  clearDownload(videoId) {
+    this.activeDownloads.delete(videoId);
+    this.downloadStates.delete(videoId);
+    console.log(`Cleared download state for video ${videoId}`);
   }
 
   /**

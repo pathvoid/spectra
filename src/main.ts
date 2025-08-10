@@ -61,7 +61,7 @@ app.whenReady().then(() => {
       
       console.log('Resolved file path:', filePath);
       
-      // Security check: only allow access to files in our downloads directory
+      // Security check: only allow access to files in our downloads directory (including source subdirectories)
       const downloadsDir = path.join(app.getPath('userData'), 'downloads');
       const resolvedPath = path.resolve(filePath);
       const normalizedDownloadsDir = path.resolve(downloadsDir);

@@ -25,7 +25,7 @@ interface LibraryItem {
   isFavorite: boolean;
   playCount: number;
   lastPlayed: string | null;
-  source?: string;
+  source: string;
   downloadStatus?: 'pending' | 'downloading' | 'completed' | 'failed';
   downloadStarted?: string;
   downloadCompleted?: string;
@@ -106,6 +106,7 @@ export function registerLibraryHandlers() {
         lastPlayed: null,
         videoId: item.videoId || '',
         title: item.title || 'Unknown Title',
+        source: item.source || 'unknown', // Ensure source is always set
         // Set download status based on whether file exists and is valid
         downloadStatus: item.filePath && validateVideoFile(item.filePath as string, item.fileSize as number) 
           ? 'completed' 
@@ -180,11 +181,16 @@ export function registerLibraryHandlers() {
         library = library.filter(item => item.type === options.type);
       }
       
+      if (options.source) {
+        library = library.filter(item => item.source === options.source);
+      }
+      
       if (options.search) {
         const searchTerm = options.search.toLowerCase();
         library = library.filter(item => 
           (item.title as string)?.toLowerCase().includes(searchTerm) ||
           (item.channel as string)?.toLowerCase().includes(searchTerm) ||
+          (item.source as string)?.toLowerCase().includes(searchTerm) ||
           (item.tags as string[])?.some(tag => tag.toLowerCase().includes(searchTerm))
         );
       }
