@@ -8,6 +8,7 @@ import Favorites from './pages/Favorites';
 import NotFound from './pages/NotFound';
 import Sidebar from './components/Sidebar';
 import BackgroundDownloadStatus from './components/BackgroundDownloadStatus';
+import UpdateNotification from './components/UpdateNotification';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -46,6 +47,9 @@ function App() {
       
       {/* Background download status indicator */}
       <BackgroundDownloadStatus />
+      
+      {/* Update notification */}
+      <UpdateNotification />
     </div>
   );
 }

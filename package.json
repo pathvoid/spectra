@@ -1,7 +1,7 @@
 {
   "name": "spectra",
   "productName": "Spectra",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Privacy in every frame.",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -9,6 +9,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
+    "publish-update": "node scripts/publish-update.js",
     "lint": "eslint --ext .ts,.tsx ."
   },
   "keywords": [],
@@ -17,6 +18,10 @@
     "email": "accounts@pathvoid.com"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pathvoid/pathvoid.git"
+  },
   "devDependencies": {
     "@catppuccin/daisyui": "^2.1.1",
     "@electron-forge/cli": "^7.8.3",
@@ -27,6 +32,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",
     "@electron-forge/plugin-fuses": "^7.8.3",
     "@electron-forge/plugin-vite": "^7.8.3",
+    "@electron-forge/publisher-github": "^7.8.3",
     "@electron/fuses": "^1.8.0",
     "@types/electron-squirrel-startup": "^1.0.2",
     "@types/react": "^19.1.9",
@@ -49,6 +55,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "electron-settings": "^4.0.4",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-updater": "^6.6.2",
     "play-dl": "^1.9.7",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

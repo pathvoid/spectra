@@ -3,11 +3,13 @@ import path from 'node:path';
 import fs from 'fs';
 import started from 'electron-squirrel-startup';
 import settings from 'electron-settings';
-import { registerSettingsHandlers, registerLibraryHandlers, registerYouTubeHandlers } from './ipc';
+import { registerSettingsHandlers, registerLibraryHandlers, registerYouTubeHandlers, registerAutoUpdaterHandlers } from './ipc';
+import autoUpdaterService from './services/autoUpdaterService';
 
 // Global type declaration for file path mapping
 declare global {
   var getFilePathFromId: ((id: string) => string | undefined) | undefined;
+  var mainWindow: BrowserWindow | undefined;
 }
 
 // Check if we're in development mode
@@ -257,6 +259,9 @@ const createWindow = async () => {
     },
   });
 
+  // Make mainWindow globally accessible for auto-updater
+  global.mainWindow = mainWindow;
+
   // and load the index.html of the app
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -364,6 +369,7 @@ const createWindow = async () => {
   registerYouTubeHandlers();
   registerSettingsHandlers();
   registerLibraryHandlers();
+  registerAutoUpdaterHandlers();
   
   // Initialize background download service after window is ready
   mainWindow.webContents.once('did-finish-load', () => {
@@ -381,6 +387,9 @@ app.on('ready', () => {
   // Configure menu based on environment
   configureMenu();
   createWindow();
+  
+  // Start auto-updater service (only in production)
+  autoUpdaterService.start();
 });
 
 // Function to configure the application menu
