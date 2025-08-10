@@ -292,6 +292,8 @@ const createWindow = async () => {
 
   // Save window state when it changes (throttled to prevent excessive saves)
   let saveTimeout: NodeJS.Timeout | null = null;
+  let originalBounds: { width: number; height: number; x: number; y: number } | null = null;
+  
   const saveWindowState = async () => {
     if (saveTimeout) {
       clearTimeout(saveTimeout);
@@ -302,15 +304,21 @@ const createWindow = async () => {
         const bounds = mainWindow.getBounds();
         const isMaximized = mainWindow.isMaximized();
         
+        // Store original bounds when window is not maximized
+        if (!isMaximized) {
+          originalBounds = { width: bounds.width, height: bounds.height, x: bounds.x, y: bounds.y };
+        }
+        
+        // Use original bounds for saving, but keep maximized state
+        const saveBounds = originalBounds || bounds;
+        
         await settings.set('windowState', {
-          width: bounds.width,
-          height: bounds.height,
-          x: bounds.x,
-          y: bounds.y,
+          width: saveBounds.width,
+          height: saveBounds.height,
+          x: saveBounds.x,
+          y: saveBounds.y,
           isMaximized: isMaximized
         });
-        
-        console.log('Window state saved:', { width: bounds.width, height: bounds.height, x: bounds.x, y: bounds.y, isMaximized });
       } catch (error) {
         console.error('Failed to save window state:', error);
       }
@@ -332,11 +340,14 @@ const createWindow = async () => {
       const bounds = mainWindow.getBounds();
       const isMaximized = mainWindow.isMaximized();
       
+      // Use original bounds for saving, but keep maximized state
+      const saveBounds = originalBounds || bounds;
+      
       await settings.set('windowState', {
-        width: bounds.width,
-        height: bounds.height,
-        x: bounds.x,
-        y: bounds.y,
+        width: saveBounds.width,
+        height: saveBounds.height,
+        x: saveBounds.x,
+        y: saveBounds.y,
         isMaximized: isMaximized
       });
       
