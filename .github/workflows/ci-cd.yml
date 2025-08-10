@@ -122,7 +122,7 @@ jobs:
     - name: Run security audit
       run: npm audit --audit-level=high
 
-git ad  # Type checking - disabled due to node_modules type conflicts
+# Type checking - disabled due to node_modules type conflicts
   # type-check:
   #   name: Type Check
   #   runs-on: ubuntu-latest
