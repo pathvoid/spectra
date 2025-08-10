@@ -1,4 +1,4 @@
-import { app, BrowserWindow, protocol, screen } from 'electron';
+import { app, BrowserWindow, protocol, screen, Menu } from 'electron';
 import path from 'node:path';
 import fs from 'fs';
 import started from 'electron-squirrel-startup';
@@ -332,7 +332,38 @@ const createWindow = async () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows
 // Some APIs can only be used after this event occurs
-app.on('ready', createWindow);
+app.on('ready', () => {
+  // Configure menu based on environment
+  configureMenu();
+  createWindow();
+});
+
+// Function to configure the application menu
+const configureMenu = () => {
+  // Check if we're in development mode
+  const isDevelopment = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
+  
+  if (!isDevelopment) {
+    // In production, create a minimal menu with only File - Exit
+    const template = [
+      {
+        label: 'File',
+        submenu: [
+          {
+            label: 'Exit',
+            accelerator: process.platform === 'darwin' ? 'Cmd+Q' : 'Ctrl+Q',
+            click: () => {
+              app.quit();
+            }
+          }
+        ]
+      }
+    ];
+    
+    const menu = Menu.buildFromTemplate(template);
+    Menu.setApplicationMenu(menu);
+  }
+};
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
