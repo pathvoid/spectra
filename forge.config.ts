@@ -29,7 +29,7 @@ const config: ForgeConfig = {
     new PublisherGithub({
       repository: {
         owner: 'pathvoid',
-        name: 'pathvoid',
+        name: 'spectra',
       },
       prerelease: false,
     }),

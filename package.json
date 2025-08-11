@@ -1,7 +1,7 @@
 {
   "name": "spectra",
   "productName": "Spectra",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Privacy in every frame.",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -20,7 +20,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pathvoid/pathvoid.git"
+    "url": "https://github.com/pathvoid/spectra.git"
   },
   "devDependencies": {
     "@catppuccin/daisyui": "^2.1.1",
